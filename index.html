@@ -170,6 +170,21 @@
   tbody tr:last-child { border-bottom: none; }
   tfoot td { font-weight: 800; border-top: 2px solid var(--line); padding-top: 12px; }
   .rate { color: var(--muted); }
+  td.edit { cursor: pointer; }
+  td.edit:hover { background: var(--surface-2); }
+  td.edit .cellval { border-bottom: 1px dashed var(--line); }
+  td input.cellinput { width: 100%; padding: 5px 6px; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); color: var(--fg); font-size: .9rem; font-family: var(--font-body); text-align: right; }
+  td:first-child input.cellinput { text-align: left; }
+  td.delcol { text-align: center; padding: 6px; }
+  td.delcol button { border: none; background: none; color: var(--muted); cursor: pointer; font-size: .95rem; padding: 2px 6px; }
+  td.delcol button:hover { color: var(--c-tarj); }
+  .addrow-btn { width: 100%; padding: 11px; border: 1px dashed var(--line); border-radius: 11px; background: var(--surface-2); color: var(--accent); font-weight: 600; font-size: .88rem; cursor: pointer; font-family: var(--font-body); }
+  .addrow-btn:hover { background: var(--line); }
+  .editable-inline { border-bottom: 1px dashed var(--muted); cursor: pointer; }
+  .table-actions { display: flex; gap: 8px; padding: 12px 18px; flex-wrap: wrap; }
+  .table-actions button { flex: 1; min-width: 130px; padding: 11px; border-radius: 11px; font-weight: 600; font-size: .86rem; cursor: pointer; font-family: var(--font-body); }
+  .table-actions .paste-btn { border: none; background: var(--accent); color: #fff; }
+  .table-actions .add-b { border: 1px dashed var(--line); background: var(--surface-2); color: var(--accent); }
 
   .debt-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; }
   .debt-tile { background: var(--surface-2); border-radius: 12px; padding: 14px; }
@@ -192,6 +207,7 @@
 
   .backup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 55; padding: 16px; }
   .backup-overlay[hidden] { display: none !important; }
+  #pasteText { height: 160px; font-family: ui-monospace, monospace; font-size: .78rem; }
   .backup-box { background: var(--surface); color: var(--fg); border-radius: 16px; padding: 22px; max-width: 440px; width: 100%; position: relative; max-height: 86vh; overflow-y: auto; }
   .backup-box h3 { margin: 0 0 8px; font-size: 1.15rem; }
   .backup-box p { font-size: .83rem; color: var(--muted); margin: 0 0 12px; }
@@ -229,7 +245,7 @@
       </button>
       <button class="cell" data-go="calendario">
         <div class="ic ic-pagar">📅</div>
-        <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$199,871</div></div>
+        <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$197,821</div></div>
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="calendario">
@@ -239,24 +255,24 @@
       </button>
       <button class="cell" data-go="deuda">
         <div class="ic ic-deuda">🪙</div>
-        <div class="tx"><div class="nm">Deuda total</div><div class="vl">RD$4,482,620</div></div>
+        <div class="tx"><div class="nm">Deuda total</div><div class="vl" id="hDeuda">RD$0</div></div>
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="prestamos">
         <div class="ic ic-prest">🏦</div>
-        <div class="tx"><div class="nm">Préstamos</div><div class="vl">RD$4,068,097</div></div>
+        <div class="tx"><div class="nm">Préstamos</div><div class="vl" id="hPrest">RD$0</div></div>
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="tarjetas">
         <div class="ic ic-tarj">💳</div>
-        <div class="tx"><div class="nm">Tarjetas</div><div class="vl">RD$414,523</div></div>
+        <div class="tx"><div class="nm">Tarjetas</div><div class="vl" id="hTarj">RD$0</div></div>
         <span class="ar">›</span>
       </button>
     </div>
 
     <div class="hero">
       <div class="lbl">Pendiente de pagos del mes</div>
-      <div class="big" id="heroPend">RD$199,871</div>
+      <div class="big" id="heroPend">RD$197,821</div>
     </div>
 
     <div class="gauge-wrap">
@@ -336,18 +352,18 @@
       <div class="cal-list" id="calList">
         <div class="cal-week">Semana 1 · 1–7 nov</div>
         <div class="cal-row t-prest" data-id="c1"><span class="date"><span class="d">1</span><span class="m">nov</span></span><span class="what"><span class="nm">Scotia Prest</span><span class="tag">Préstamo · 20%</span></span><span class="amt">12,895</span><span class="check">✓</span></div>
-        <div class="cal-row t-tarj" data-id="c2"><span class="date"><span class="d">2</span><span class="m">nov</span></span><span class="what"><span class="nm">Qik T</span><span class="tag">Tarjeta · pago mínimo</span></span><span class="amt">21,610</span><span class="check">✓</span></div>
+        <div class="cal-row t-tarj" data-id="c2"><span class="date"><span class="d">2</span><span class="m">nov</span></span><span class="what"><span class="nm">Qik T</span><span class="tag">Tarjeta · pago mínimo</span></span><span class="amt">21,604</span><span class="check">✓</span></div>
         <div class="cal-row t-prest" data-id="c3"><span class="date"><span class="d">6</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD crediclicl</span><span class="tag">Préstamo · 19.2%</span></span><span class="amt">13,719</span><span class="check">✓</span></div>
         <div class="cal-week">Semana 2 · 8–14 nov</div>
         <div class="cal-row t-prest" data-id="c4"><span class="date"><span class="d">9</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 6931</span><span class="tag">Préstamo · 23.5%</span></span><span class="amt">11,616</span><span class="check">✓</span></div>
-        <div class="cal-row t-prest" data-id="c5"><span class="date"><span class="d">12</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 2587</span><span class="tag">Préstamo · 24%</span></span><span class="amt">17,017</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c5"><span class="date"><span class="d">12</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 2587</span><span class="tag">Préstamo · 24%</span></span><span class="amt">16,294</span><span class="check">✓</span></div>
         <div class="cal-row t-prest" data-id="c6"><span class="date"><span class="d">12</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 3861</span><span class="tag">Préstamo · 17%</span></span><span class="amt">16,694</span><span class="check">✓</span></div>
         <div class="cal-week">Semana 3 · 15–21 nov</div>
         <div class="cal-row t-prest" data-id="c7"><span class="date"><span class="d">16</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Credimas</span><span class="tag">Préstamo</span></span><span class="amt">4,738</span><span class="check">✓</span></div>
         <div class="cal-row t-prest" data-id="c8"><span class="date"><span class="d">20</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 5281</span><span class="tag">Préstamo · 16.8%</span></span><span class="amt">12,841</span><span class="check">✓</span></div>
         <div class="cal-week">Semana 4 · 22–30 nov</div>
-        <div class="cal-row t-prest" data-id="c9"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 9785</span><span class="tag">Consolidación · 18%</span></span><span class="amt">22,791</span><span class="check">✓</span></div>
-        <div class="cal-row t-tarj" data-id="c10"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD T (USD)</span><span class="tag">Tarjeta · saldo en dólares</span></span><span class="amt">22,820</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c9"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 9785</span><span class="tag">Consolidación · 18%</span></span><span class="amt">22,800</span><span class="check">✓</span></div>
+        <div class="cal-row t-tarj" data-id="c10"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD T (USD)</span><span class="tag">Tarjeta · saldo en dólares</span></span><span class="amt">21,490</span><span class="check">✓</span></div>
         <div class="cal-week">Sin fecha fija</div>
         <div class="cal-row t-prest" data-id="c11"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Scotia cuotas</span><span class="tag">Préstamo · 20%</span></span><span class="amt">3,856</span><span class="check">✓</span></div>
         <div class="cal-row t-prest" data-id="c12"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Reservas Pres</span><span class="tag">Préstamo</span></span><span class="amt">11,774</span><span class="check">✓</span></div>
@@ -355,8 +371,8 @@
       </div>
       <div class="cal-foot">
         <span>Pagado: <b id="calPaid" style="color:var(--c-gasto)">RD$0</b></span>
-        <span>Pendiente: <b id="calPend" style="color:var(--c-pagar)">RD$199,871</b></span>
-        <span>Total: <b style="color:var(--fg)">RD$199,871</b></span>
+        <span>Pendiente: <b id="calPend" style="color:var(--c-pagar)">RD$197,821</b></span>
+        <span>Total: <b style="color:var(--fg)">RD$197,821</b></span>
       </div>
     </div>
   </div>
@@ -365,23 +381,15 @@
   <div class="view" id="v-prestamos">
     <div class="sec-card">
       <div class="sec-head"><h2>Préstamos</h2><div class="meta">deuda 4,068,097 · cuota mensual 127,941</div></div>
-      <div class="tbl-scroll">
-        <table>
-          <thead><tr><th>Banco</th><th>Interés</th><th>Deuda</th><th>Cuota</th></tr></thead>
-          <tbody>
-            <tr><td>Scotia Prest</td><td class="rate">20.0%</td><td>366,146</td><td>12,895</td></tr>
-            <tr><td>Scotia cuotas</td><td class="rate">20.0%</td><td>59,557</td><td>3,856</td></tr>
-            <tr><td>Reservas Pres</td><td class="rate">—</td><td>272,510</td><td>11,774</td></tr>
-            <tr><td>BHD Credimas</td><td class="rate">—</td><td>64,002</td><td>4,738</td></tr>
-            <tr><td>BHD crediclicl</td><td class="rate">19.2%</td><td>433,554</td><td>13,719</td></tr>
-            <tr><td>BHD Prest 6931</td><td class="rate">23.5%</td><td>332,374</td><td>11,616</td></tr>
-            <tr><td>BHD Prest 2587</td><td class="rate">24.0%</td><td>427,184</td><td>17,017</td></tr>
-            <tr><td>BHD Prest 3861</td><td class="rate">17.0%</td><td>557,971</td><td>16,694</td></tr>
-            <tr><td>BHD Prest 5281</td><td class="rate">16.8%</td><td>500,799</td><td>12,841</td></tr>
-            <tr><td>BHD Prest 9785</td><td class="rate">18.0%</td><td>854,000</td><td>22,791</td></tr>
-          </tbody>
-          <tfoot><tr><td>Total</td><td></td><td>4,068,097</td><td>127,941</td></tr></tfoot>
-        </table>
+      <div class="sec-head" style="border-top:none;padding-top:0"><div class="meta">Toca cualquier valor para editarlo. Los totales se recalculan solos.</div></div>
+      <div class="tbl-scroll"><table id="tblPrest">
+        <thead><tr><th>Banco</th><th>Interés</th><th>Deuda</th><th>Cuota</th><th></th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td>Total</td><td></td><td id="pTotDeuda">—</td><td id="pTotCuota">—</td><td></td></tr></tfoot>
+      </table></div>
+      <div class="table-actions">
+        <button type="button" class="paste-btn" id="pastePrest">📋 Pegar tabla de Excel</button>
+        <button type="button" class="add-b" id="addPrest">+ Agregar fila</button>
       </div>
     </div>
   </div>
@@ -389,35 +397,31 @@
   <!-- TARJETAS -->
   <div class="view" id="v-tarjetas">
     <div class="sec-card">
-      <div class="sec-head"><h2>Tarjetas de crédito</h2><div class="meta">deuda 414,523 · pago del mes 44,430</div></div>
-      <div class="tbl-scroll">
-        <table>
-          <thead><tr><th>Tarjeta</th><th>Tasa</th><th>Deuda</th><th>Pago nov.</th></tr></thead>
-          <tbody>
-            <tr><td>Qik T</td><td class="rate">60%</td><td>306,933</td><td>21,610</td></tr>
-            <tr><td>BHD T (USD)</td><td class="rate">60%</td><td>—</td><td>22,820</td></tr>
-            <tr><td>Reservas T</td><td class="rate">60%</td><td>304,590</td><td>—</td></tr>
-            <tr><td>BHD T (RD$)</td><td class="rate">60%</td><td>3,000</td><td>—</td></tr>
-            <tr><td>Scotia T</td><td class="rate">60%</td><td>0</td><td>—</td></tr>
-          </tbody>
-          <tfoot><tr><td>Total</td><td></td><td>614,523</td><td>44,430</td></tr></tfoot>
-        </table>
+      <div class="sec-head"><h2>Tarjetas de crédito</h2><div class="meta" id="tarjMeta">—</div></div>
+      <div class="sec-head" style="border-top:none;padding-top:0"><div class="meta">Toca cualquier valor para editarlo.</div></div>
+      <div class="tbl-scroll"><table id="tblTarj">
+        <thead><tr><th>Tarjeta</th><th>Tasa</th><th>Deuda</th><th>Pago</th><th></th></tr></thead>
+        <tbody></tbody>
+        <tfoot><tr><td>Total</td><td></td><td id="tTotDeuda">—</td><td id="tTotPago">—</td><td></td></tr></tfoot>
+      </table></div>
+      <div class="table-actions">
+        <button type="button" class="paste-btn" id="pasteTarj">📋 Pegar tabla de Excel</button>
+        <button type="button" class="add-b" id="addTarj">+ Agregar fila</button>
       </div>
-      <div class="sec-head" style="border-top:1px solid var(--line);border-bottom:none"><div class="meta">Nota: el total de deuda de tarjetas en el resumen (414,523) excluye saldos en 0 y ya pagados. El pago del mes (44,430) es lo que vence en noviembre.</div></div>
     </div>
   </div>
 
   <!-- DEUDA -->
   <div class="view" id="v-deuda">
     <div class="sec-card">
-      <div class="sec-head"><h2>Resumen de deuda</h2><div class="meta">noviembre 2026</div></div>
+      <div class="sec-head"><h2>Resumen de deuda</h2><div class="meta">Casa (vivienda): <b id="casaVal" class="editable-inline">27,500</b> · toca para cambiar</div></div>
       <div class="debt-tiles">
-        <div class="debt-tile total full"><div class="dl">Deuda total</div><div class="dv">RD$4,482,620</div></div>
-        <div class="debt-tile prest"><div class="dl">Préstamos</div><div class="dv">RD$4,068,097</div></div>
-        <div class="debt-tile tarj"><div class="dl">Tarjetas</div><div class="dv">RD$414,523</div></div>
-        <div class="debt-tile"><div class="dl">Cuota préstamos</div><div class="dv">127,941</div></div>
-        <div class="debt-tile"><div class="dl">Pago tarjetas</div><div class="dv">44,430</div></div>
-        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa 27,500)</div><div class="dv">RD$199,871</div></div>
+        <div class="debt-tile total full"><div class="dl">Deuda total</div><div class="dv" id="dTotal">—</div></div>
+        <div class="debt-tile prest"><div class="dl">Préstamos</div><div class="dv" id="dPrest">—</div></div>
+        <div class="debt-tile tarj"><div class="dl">Tarjetas</div><div class="dv" id="dTarj">—</div></div>
+        <div class="debt-tile"><div class="dl">Cuota préstamos</div><div class="dv" id="dCuotaP">—</div></div>
+        <div class="debt-tile"><div class="dl">Pago tarjetas</div><div class="dv" id="dPagoT">—</div></div>
+        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa)</div><div class="dv" id="dNecesidad">—</div></div>
       </div>
     </div>
   </div>
@@ -429,6 +433,20 @@
 <div class="lightbox" id="lightbox" hidden>
   <button type="button" class="lb-close" id="lbClose" aria-label="Cerrar">✕</button>
   <img id="lbImg" alt="Factura ampliada">
+</div>
+
+<div class="backup-overlay" id="pasteOverlay" hidden>
+  <div class="backup-box">
+    <button type="button" class="backup-x" id="pasteClose" aria-label="Cerrar">✕</button>
+    <h3 id="pasteTitle">Pegar tabla de Excel</h3>
+    <p>Copia las filas desde tu Excel y pégalas aquí (con o sin encabezado). La app detecta tu formato automáticamente:<br>• <b>Interés · Inicio · Deuda · Bancos · Fijo</b> (préstamos)<br>• <b>Deuda · Bancos · Variable</b> (tarjetas)<br>• <b>Origen · Deuda · Bancos · Fecha · Fijo · Variable · mini</b> (mixto)<br>Reemplaza toda la lista.</p>
+    <textarea id="pasteText" placeholder="Pega aquí las filas de tu Excel..."></textarea>
+    <div class="ba">
+      <button type="button" id="pasteApply">Actualizar lista</button>
+      <button type="button" id="pasteCancel" style="background:var(--surface-2);color:var(--fg);border:1px solid var(--line)">Cancelar</button>
+    </div>
+    <div class="backup-msg" id="pasteMsg"></div>
+  </div>
 </div>
 
 <div class="backup-overlay" id="backupOverlay" hidden>
@@ -454,8 +472,31 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
+  var DEBT = "finanzas_deuda_v2";
 
-  var calAmts = { c1:12895,c2:21610,c3:13719,c4:11616,c5:17017,c6:16694,c7:4738,c8:12841,c9:22791,c10:22820,c11:3856,c12:11774,c13:27500 };
+  // Datos editables de deuda (valores por defecto)
+  var prestamos = [
+    { nombre:"Scotia Prest", tasa:"20.0%", deuda:366147, cuota:12895 },
+    { nombre:"Scotia cuotas", tasa:"20.0%", deuda:59557, cuota:3856 },
+    { nombre:"Reservas Pres T", tasa:"—", deuda:272510, cuota:11774 },
+    { nombre:"BHD Credimas", tasa:"—", deuda:64003, cuota:4738 },
+    { nombre:"BHD crediclicl", tasa:"19.2%", deuda:433554, cuota:13719 },
+    { nombre:"BHD Prest 6931", tasa:"23.5%", deuda:332375, cuota:11616 },
+    { nombre:"BHD Prest 2587", tasa:"24.0%", deuda:427184, cuota:16294 },
+    { nombre:"BHD Prest 3861", tasa:"17.0%", deuda:557971, cuota:16694 },
+    { nombre:"BHD Prest 5281", tasa:"16.8%", deuda:500799, cuota:12841 },
+    { nombre:"BHD Prest 9785", tasa:"18.0%", deuda:854000, cuota:22800 }
+  ];
+  var tarjetas = [
+    { nombre:"Qik T", tasa:"60%", deuda:306828, cuota:21604 },
+    { nombre:"BHD T", tasa:"60%", deuda:3012, cuota:0 },
+    { nombre:"Scotia T", tasa:"60%", deuda:0, cuota:0 },
+    { nombre:"Reservas T", tasa:"60%", deuda:321555, cuota:0 },
+    { nombre:"BHD T USD", tasa:"60%", deuda:350, cuota:21490 }
+  ];
+  var casa = 27500;
+
+  var calAmts = { c1:12895,c2:21604,c3:13719,c4:11616,c5:16294,c6:16694,c7:4738,c8:12841,c9:22800,c10:21490,c11:3856,c12:11774,c13:27500 };
   var calDays = { c1:1,c2:2,c3:6,c4:9,c5:12,c6:12,c7:16,c8:20,c9:22,c10:22,c11:null,c12:null,c13:null };
   var calNames = { c1:"Scotia Prest",c2:"Qik T",c3:"BHD crediclicl",c4:"BHD Prest 6931",c5:"BHD Prest 2587",c6:"BHD Prest 3861",c7:"BHD Credimas",c8:"BHD Prest 5281",c9:"BHD Prest 9785",c10:"BHD T (USD)",c11:"Scotia cuotas",c12:"Reservas Pres",c13:"Casa" };
   var REF_MONTH = 10, REF_YEAR = 2026;
@@ -471,10 +512,162 @@
     try { var r = localStorage.getItem(STORE); if(r) expenses = JSON.parse(r)||[]; } catch(e){ expenses=[]; }
     try { var p = localStorage.getItem(PAID); if(p) paid = JSON.parse(p)||{}; } catch(e){ paid={}; }
     try { var mt = localStorage.getItem(META); if(mt){ var o=JSON.parse(mt); if(o&&o.lastBackupCount!=null) lastBackupCount=o.lastBackupCount; } } catch(e){}
+    try { var d = localStorage.getItem(DEBT); if(d){ var dd=JSON.parse(d); if(dd.prestamos) prestamos=dd.prestamos; if(dd.tarjetas) tarjetas=dd.tarjetas; if(dd.casa!=null) casa=dd.casa; } } catch(e){}
   }
   function save(){ localStorage.setItem(STORE, JSON.stringify(expenses)); }
   function savePaid(){ try { localStorage.setItem(PAID, JSON.stringify(paid)); } catch(e){} }
   function saveMeta(){ try { localStorage.setItem(META, JSON.stringify({ lastBackupCount: lastBackupCount })); } catch(e){} }
+  function saveDebt(){ try { localStorage.setItem(DEBT, JSON.stringify({ prestamos:prestamos, tarjetas:tarjetas, casa:casa })); } catch(e){} }
+
+  function fmtNum(n){ return Math.round(n).toLocaleString("en-US"); }
+  function parseNum(s){ var n = parseFloat(String(s).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:n; }
+
+  // ---- Tablas editables (préstamos y tarjetas) ----
+  function makeEditableTable(tbodyId, data, totDeudaId, totCuotaId, onChange){
+    var tb = document.querySelector("#"+tbodyId+" tbody");
+    tb.innerHTML = "";
+    var totD = 0, totC = 0;
+    data.forEach(function(row, i){
+      totD += row.deuda; totC += row.cuota;
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="edit" data-f="nombre"><span class="cellval">'+escapeHtml(row.nombre)+'</span></td>' +
+        '<td class="edit rate" data-f="tasa"><span class="cellval">'+escapeHtml(row.tasa)+'</span></td>' +
+        '<td class="edit" data-f="deuda"><span class="cellval">'+fmtNum(row.deuda)+'</span></td>' +
+        '<td class="edit" data-f="cuota"><span class="cellval">'+fmtNum(row.cuota)+'</span></td>' +
+        '<td class="delcol"><button type="button" aria-label="Eliminar">✕</button></td>';
+      // editar celda al tocar
+      Array.prototype.forEach.call(tr.querySelectorAll("td.edit"), function(td){
+        td.addEventListener("click", function(){
+          if(td.querySelector("input")) return;
+          var field = td.getAttribute("data-f");
+          var cur = row[field];
+          var inp = document.createElement("input");
+          inp.className = "cellinput";
+          inp.type = (field==="nombre"||field==="tasa") ? "text" : "number";
+          inp.value = cur;
+          td.innerHTML = ""; td.appendChild(inp); inp.focus(); inp.select();
+          function commit(){
+            var val = (field==="nombre"||field==="tasa") ? inp.value.trim() : parseNum(inp.value);
+            row[field] = val;
+            saveDebt(); onChange();
+          }
+          inp.addEventListener("blur", commit);
+          inp.addEventListener("keydown", function(ev){ if(ev.key==="Enter"){ inp.blur(); } if(ev.key==="Escape"){ onChange(); } });
+        });
+      });
+      tr.querySelector(".delcol button").addEventListener("click", function(){
+        data.splice(i,1); saveDebt(); onChange();
+      });
+      tb.appendChild(tr);
+    });
+    document.getElementById(totDeudaId).textContent = fmtNum(totD);
+    document.getElementById(totCuotaId).textContent = fmtNum(totC);
+    return { totD: totD, totC: totC };
+  }
+
+  function renderDebt(){
+    var p = makeEditableTable("tblPrest", prestamos, "pTotDeuda", "pTotCuota", renderDebt);
+    var t = makeEditableTable("tblTarj", tarjetas, "tTotDeuda", "tTotPago", renderDebt);
+    // meta tarjetas
+    document.getElementById("tarjMeta").textContent = "deuda " + fmtNum(t.totD) + " · pago del mes " + fmtNum(t.totC);
+    // resumen de deuda
+    var total = p.totD + t.totD;
+    document.getElementById("dTotal").textContent = fmt(total);
+    document.getElementById("dPrest").textContent = fmt(p.totD);
+    document.getElementById("dTarj").textContent = fmt(t.totD);
+    document.getElementById("dCuotaP").textContent = fmtNum(p.totC);
+    document.getElementById("dPagoT").textContent = fmtNum(t.totC);
+    var necesidad = p.totC + t.totC + casa;
+    document.getElementById("dNecesidad").textContent = fmt(necesidad);
+    document.getElementById("casaVal").textContent = fmtNum(casa);
+    // inicio
+    document.getElementById("hPrest").textContent = fmt(p.totD);
+    document.getElementById("hTarj").textContent = fmt(t.totD);
+    document.getElementById("hDeuda").textContent = fmt(total);
+  }
+
+  // editar casa
+  document.getElementById("casaVal").addEventListener("click", function(){
+    var el = this;
+    if(el.querySelector("input")) return;
+    var inp = document.createElement("input"); inp.className="cellinput"; inp.type="number"; inp.value=casa; inp.style.width="110px"; inp.style.textAlign="left";
+    el.textContent=""; el.appendChild(inp); inp.focus(); inp.select();
+    function commit(){ casa = parseNum(inp.value); saveDebt(); renderDebt(); }
+    inp.addEventListener("blur", commit);
+    inp.addEventListener("keydown", function(ev){ if(ev.key==="Enter") inp.blur(); if(ev.key==="Escape") renderDebt(); });
+  });
+
+  document.getElementById("addPrest").addEventListener("click", function(){
+    prestamos.push({ nombre:"Nuevo préstamo", tasa:"—", deuda:0, cuota:0 }); saveDebt(); renderDebt();
+  });
+  document.getElementById("addTarj").addEventListener("click", function(){
+    tarjetas.push({ nombre:"Nueva tarjeta", tasa:"60%", deuda:0, cuota:0 }); saveDebt(); renderDebt();
+  });
+
+  // ---- Pegar tabla de Excel ----
+  var pasteTarget = null; // "prestamos" | "tarjetas"
+  function openPaste(target){
+    pasteTarget = target;
+    document.getElementById("pasteTitle").textContent = target==="prestamos" ? "Pegar préstamos" : "Pegar tarjetas";
+    document.getElementById("pasteText").value = "";
+    document.getElementById("pasteMsg").textContent = "";
+    document.getElementById("pasteOverlay").hidden = false;
+    document.getElementById("pasteText").focus();
+  }
+  document.getElementById("pastePrest").addEventListener("click", function(){ openPaste("prestamos"); });
+  document.getElementById("pasteTarj").addEventListener("click", function(){ openPaste("tarjetas"); });
+  document.getElementById("pasteClose").addEventListener("click", function(){ document.getElementById("pasteOverlay").hidden=true; });
+  document.getElementById("pasteCancel").addEventListener("click", function(){ document.getElementById("pasteOverlay").hidden=true; });
+  document.getElementById("pasteOverlay").addEventListener("click", function(ev){ if(ev.target===this) this.hidden=true; });
+
+  function isPercent(s){ return /%/.test(String(s)); }
+  function splitCols(line){ return (line.indexOf("\t")>=0 ? line.split("\t") : line.split(/ {2,}/)).map(function(c){return c.trim();}); }
+  // Interpreta texto pegado de Excel. Detecta automáticamente tres formatos:
+  //   "prestamos": Interes | Inicio | Deuda | Bancos | Fijo
+  //   "tarjetas":  Deuda | Bancos | Variable
+  //   "mixto":     Origen | Deuda | Bancos | Fecha | Fijo | Variable | mini
+  function parsePaste(text){
+    var rawLines = text.split(/\r?\n/).filter(function(l){return l.trim().length;});
+    if(!rawLines.length) return [];
+    var hdr = rawLines.slice(0,3).join(" ").toLowerCase();
+    var fmt = "prestamos";
+    if(/origen/.test(hdr)) fmt = "mixto";
+    else if(/\binteres\b|interés|inicio/.test(hdr)) fmt = "prestamos";
+    else if(/variable/.test(hdr) && /deuda/.test(hdr) && !/origen|inicio|\bfijo\b/.test(hdr)) fmt = "tarjetas";
+    var rows = [];
+    rawLines.forEach(function(line){
+      var cols = splitCols(line);
+      var joined = line.toLowerCase();
+      if(/^\s*(prestamos|tarjetas|interes|interés|inicio|origen|deuda|bancos|fecha|fijo|variable|mini|total)/.test(joined) && !/[0-9]{3,}/.test(joined)) return;
+      var nombre="", tasa="—", deuda=0, cuota=0;
+      if(fmt==="mixto"){
+        deuda = parseNum(cols[1]||""); nombre = (cols[2]||"").trim();
+        cuota = parseNum(cols[4]||"") + parseNum(cols[5]||"") + parseNum(cols[6]||"");
+      } else if(fmt==="tarjetas"){
+        deuda = parseNum(cols[0]||""); nombre = (cols[1]||"").trim();
+        cuota = parseNum(cols[2]||""); tasa = "60%";
+      } else {
+        tasa = (cols[0] && isPercent(cols[0])) ? cols[0].trim() : "—";
+        deuda = parseNum(cols[2]||""); nombre = (cols[3]||"").trim();
+        cuota = parseNum(cols[4]||"");
+      }
+      if(!nombre && deuda===0 && cuota===0) return;
+      rows.push({ nombre: nombre||"(sin nombre)", tasa: tasa, deuda: deuda, cuota: cuota });
+    });
+    return rows;
+  }
+
+  document.getElementById("pasteApply").addEventListener("click", function(){
+    var txt = document.getElementById("pasteText").value;
+    var rows = parsePaste(txt);
+    if(rows.length===0){ document.getElementById("pasteMsg").textContent = "No se detectaron filas. Revisa que pegaste desde Excel."; document.getElementById("pasteMsg").style.color="var(--c-tarj)"; return; }
+    if(pasteTarget==="prestamos"){ prestamos = rows; } else { tarjetas = rows; }
+    saveDebt(); renderDebt();
+    document.getElementById("pasteMsg").style.color="var(--c-gasto)";
+    document.getElementById("pasteMsg").textContent = "Actualizado: " + rows.length + " filas. Revisa que deuda y cuota quedaron en su lugar.";
+    setTimeout(function(){ document.getElementById("pasteOverlay").hidden=true; }, 1400);
+  });
 
   // ---- Navegación ----
   function go(name){
@@ -693,11 +886,11 @@
   function closeLightbox(){ document.getElementById("lightbox").hidden=true; document.getElementById("lbImg").src=""; }
   document.getElementById("lbClose").addEventListener("click", closeLightbox);
   document.getElementById("lightbox").addEventListener("click", function(ev){ if(ev.target===this) closeLightbox(); });
-  document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeLightbox(); document.getElementById("backupOverlay").hidden=true; } });
+  document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeLightbox(); document.getElementById("backupOverlay").hidden=true; document.getElementById("pasteOverlay").hidden=true; } });
 
   // ---- Respaldo ----
   function openBackup(){
-    var data=JSON.stringify({version:2,exported:new Date().toISOString(),expenses:expenses,paid:paid},null,2);
+    var data=JSON.stringify({version:3,exported:new Date().toISOString(),expenses:expenses,paid:paid,prestamos:prestamos,tarjetas:tarjetas,casa:casa},null,2);
     document.getElementById("backupText").value=data; document.getElementById("backupMsg").textContent="";
     document.getElementById("backupOverlay").hidden=false;
     lastBackupCount = expenses.length; saveMeta(); renderBackupReminder();
@@ -708,7 +901,7 @@
   document.getElementById("importFile").addEventListener("change", function(){
     var f=this.files&&this.files[0]; if(!f) return;
     var reader=new FileReader();
-    reader.onload=function(ev){ try{ var o=JSON.parse(ev.target.result); if(o&&Array.isArray(o.expenses)){ expenses=o.expenses; if(o.paid) paid=o.paid; try{save();}catch(e){} savePaid(); renderGastos(); renderCal(); renderAlerts(); document.getElementById("homeNote").textContent="Datos restaurados."; } }catch(err){ document.getElementById("homeNote").textContent="No se pudo leer el archivo."; } };
+    reader.onload=function(ev){ try{ var o=JSON.parse(ev.target.result); if(o&&Array.isArray(o.expenses)){ expenses=o.expenses; if(o.paid) paid=o.paid; if(o.prestamos) prestamos=o.prestamos; if(o.tarjetas) tarjetas=o.tarjetas; if(o.casa!=null) casa=o.casa; try{save();}catch(e){} savePaid(); saveDebt(); renderDebt(); renderGastos(); renderCal(); renderAlerts(); document.getElementById("homeNote").textContent="Datos restaurados."; } }catch(err){ document.getElementById("homeNote").textContent="No se pudo leer el archivo."; } };
     reader.readAsText(f); this.value="";
   });
   document.getElementById("backupClose").addEventListener("click", function(){ document.getElementById("backupOverlay").hidden=true; });
@@ -739,10 +932,12 @@
 
   document.getElementById("backupOverlay").hidden = true;
   document.getElementById("lightbox").hidden = true;
+  document.getElementById("pasteOverlay").hidden = true;
 
   load();
   document.getElementById("eDate").value = todayISO();
   updateMonthLabel();
+  renderDebt();
   renderCal();
   renderAlerts();
   renderGastos();

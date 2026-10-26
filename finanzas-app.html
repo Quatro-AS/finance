@@ -1,0 +1,240 @@
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Finanzas App</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+  /* Estilo "app" tipo HomeBudget: cuadrícula de atajos de colores, número central,
+     medidor circular de progreso, gráfica de deuda mes a mes. Sin ingreso: solo gastos y deudas. */
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --fg: #1b2230;
+    --muted: #727d8c;
+    --line: #e4e7ec;
+    --accent: #3a53c4;
+    --c-gasto: #2f9e68;
+    --c-pagar: #e0922f;
+    --c-pagado: #3a53c4;
+    --c-deuda: #6a4fd0;
+    --c-prest: #2a8fb0;
+    --c-tarj: #d1495b;
+    --radius: 16px;
+    --shadow: 0 1px 3px rgba(27,34,48,.07), 0 6px 20px rgba(27,34,48,.06);
+    --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1218; --surface: #181c23; --surface-2: #222730; --fg: #e9edf2;
+      --muted: #929cab; --line: #2a303a; --accent: #7084f0;
+      --c-gasto: #43bd81; --c-pagar: #e3ad54; --c-pagado: #7084f0;
+      --c-deuda: #957ef0; --c-prest: #4fb0d0; --c-tarj: #e06a7c;
+      --shadow: 0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1218; --surface: #181c23; --surface-2: #222730; --fg: #e9edf2;
+    --muted: #929cab; --line: #2a303a; --accent: #7084f0;
+    --c-gasto: #43bd81; --c-pagar: #e3ad54; --c-pagado: #7084f0;
+    --c-deuda: #957ef0; --c-prest: #4fb0d0; --c-tarj: #e06a7c;
+    --shadow: 0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font-body);
+    line-height: 1.45; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    max-width: 440px; margin: 0 auto;
+    padding-left: max(14px, env(safe-area-inset-left, 0px));
+    padding-right: max(14px, env(safe-area-inset-right, 0px));
+    padding-block: 0 56px;
+  }
+
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 4px 10px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 5;
+  }
+  .topbar .title { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; }
+  .topbar .burger, .topbar .theme { background: none; border: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; padding: 4px 8px; font-family: var(--font-body); }
+  .topbar .theme { font-size: .8rem; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); }
+  .month { text-align: center; font-weight: 700; color: var(--muted); font-size: .95rem; padding: 2px 0 14px; }
+
+  /* Cuadrícula de atajos */
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+    background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  }
+  .cell {
+    background: var(--surface); padding: 16px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+    min-width: 0;
+  }
+  .cell:hover { background: var(--surface-2); }
+  .cell .ic {
+    width: 44px; height: 44px; border-radius: 12px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; line-height: 1;
+  }
+  .cell .tx { min-width: 0; flex: 1 1 auto; }
+  .cell .tx .nm { font-size: .82rem; color: var(--muted); font-weight: 600; }
+  .cell .tx .vl { font-size: 1.02rem; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; }
+  .cell .ar { color: var(--muted); font-size: 1rem; flex: none; }
+  .ic-gasto { background: color-mix(in srgb, var(--c-gasto) 16%, transparent); }
+  .ic-pagar { background: color-mix(in srgb, var(--c-pagar) 16%, transparent); }
+  .ic-pagado { background: color-mix(in srgb, var(--c-pagado) 16%, transparent); }
+  .ic-deuda { background: color-mix(in srgb, var(--c-deuda) 16%, transparent); }
+  .ic-prest { background: color-mix(in srgb, var(--c-prest) 16%, transparent); }
+  .ic-tarj { background: color-mix(in srgb, var(--c-tarj) 16%, transparent); }
+
+  /* Número central + medidor */
+  .hero { text-align: center; padding: 26px 0 10px; }
+  .hero .lbl { font-size: .9rem; color: var(--muted); font-weight: 600; }
+  .hero .big { font-size: 2.6rem; font-weight: 800; letter-spacing: -.03em; margin-top: 2px; color: var(--c-pagar); }
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; }
+  .gauge-lbl { font-size: .88rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .gauge { position: relative; width: 180px; height: 180px; }
+  .gauge svg { transform: rotate(-90deg); }
+  .gauge .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; }
+
+  .section-line { height: 1px; background: var(--line); margin: 20px 0; }
+
+  /* Gráfica de deuda */
+  .chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 16px 14px; }
+  .chart-card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
+  .chart-card .sub { font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .legend { display: flex; gap: 16px; justify-content: center; margin-top: 10px; font-size: .78rem; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+  .note { font-size: .74rem; color: var(--muted); text-align: center; padding-top: 18px; }
+</style>
+
+<div class="app">
+
+  <div class="topbar">
+    <button class="burger" aria-label="Menú">☰</button>
+    <span class="title">Mis Finanzas</span>
+    <button class="theme" id="themeBtn">Tema</button>
+  </div>
+  <div class="month">noviembre 2026</div>
+
+  <div class="grid">
+    <div class="cell">
+      <div class="ic ic-gasto">💵</div>
+      <div class="tx"><div class="nm">Gastado</div><div class="vl">RD$0</div></div>
+      <span class="ar">›</span>
+    </div>
+    <div class="cell">
+      <div class="ic ic-pagar">📅</div>
+      <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$199,721</div></div>
+      <span class="ar">›</span>
+    </div>
+    <div class="cell">
+      <div class="ic ic-pagado">✅</div>
+      <div class="tx"><div class="nm">Pagado</div><div class="vl">RD$0</div></div>
+      <span class="ar">›</span>
+    </div>
+    <div class="cell">
+      <div class="ic ic-deuda">🪙</div>
+      <div class="tx"><div class="nm">Deuda total</div><div class="vl">RD$4,482,620</div></div>
+      <span class="ar">›</span>
+    </div>
+    <div class="cell">
+      <div class="ic ic-prest">🏦</div>
+      <div class="tx"><div class="nm">Préstamos</div><div class="vl">RD$4,068,097</div></div>
+      <span class="ar">›</span>
+    </div>
+    <div class="cell">
+      <div class="ic ic-tarj">💳</div>
+      <div class="tx"><div class="nm">Tarjetas</div><div class="vl">RD$414,523</div></div>
+      <span class="ar">›</span>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="lbl">Pendiente del mes</div>
+    <div class="big">RD$199,721</div>
+  </div>
+
+  <div class="gauge-wrap">
+    <div class="gauge-lbl">Pagos del mes saldados</div>
+    <div class="gauge">
+      <svg width="180" height="180" viewBox="0 0 180 180">
+        <circle cx="90" cy="90" r="76" fill="none" stroke="var(--surface-2)" stroke-width="18"/>
+        <circle id="gaugeArc" cx="90" cy="90" r="76" fill="none" stroke="var(--c-pagado)" stroke-width="18" stroke-linecap="round"
+          stroke-dasharray="477.5" stroke-dashoffset="477.5"/>
+      </svg>
+      <div class="pct" id="gaugePct">0%</div>
+    </div>
+  </div>
+
+  <div class="section-line"></div>
+
+  <div class="chart-card">
+    <h3>Deuda total mes a mes</h3>
+    <div class="sub">Tu progreso bajando la deuda</div>
+    <svg class="chart-svg" viewBox="0 0 380 190" id="debtChart" role="img" aria-label="Gráfica de deuda mensual"></svg>
+    <div class="legend"><span><i style="background:var(--c-deuda)"></i>Deuda total (millones RD$)</span></div>
+  </div>
+
+  <div class="note">Vista de ejemplo · estilo app. Los números vienen de tu tabla de noviembre.</div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // Medidor: 0% ejemplo (se llenaría con los pagos marcados en el panel real)
+  var pct = 0;
+  var circ = 2 * Math.PI * 76;
+  var arc = document.getElementById("gaugeArc");
+  arc.setAttribute("stroke-dasharray", circ.toFixed(1));
+  arc.setAttribute("stroke-dashoffset", (circ * (1 - pct/100)).toFixed(1));
+  document.getElementById("gaugePct").textContent = pct + "%";
+
+  // Gráfica de deuda: dos puntos conocidos + proyección de ejemplo
+  var data = [
+    { m: "oct", v: 4922873 },
+    { m: "nov", v: 4482620 }
+  ];
+  var W = 380, H = 190, padL = 42, padR = 14, padT = 14, padB = 28;
+  var vals = data.map(function(d){ return d.v; });
+  var maxV = 5000000, minV = 4000000;
+  function x(i){ return padL + (W - padL - padR) * (data.length === 1 ? 0.5 : i/(data.length-1)); }
+  function y(v){ return padT + (H - padT - padB) * (1 - (v - minV)/(maxV - minV)); }
+
+  var svg = document.getElementById("debtChart");
+  var ns = "http://www.w3.org/2000/svg";
+  function el(tag, attrs){ var e = document.createElementNS(ns, tag); for(var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+  // grid horizontal
+  [4000000,4500000,5000000].forEach(function(gv){
+    svg.appendChild(el("line", { x1:padL, y1:y(gv), x2:W-padR, y2:y(gv), stroke:"var(--line)", "stroke-width":1 }));
+    var t = el("text", { x:padL-6, y:y(gv)+3, "text-anchor":"end", "font-size":"9", fill:"var(--muted)" });
+    t.textContent = (gv/1000000).toFixed(1) + "M";
+    svg.appendChild(t);
+  });
+
+  // línea
+  var dpath = data.map(function(d,i){ return (i===0?"M":"L") + x(i) + " " + y(d.v); }).join(" ");
+  svg.appendChild(el("path", { d:dpath, fill:"none", stroke:"var(--c-deuda)", "stroke-width":3, "stroke-linecap":"round", "stroke-linejoin":"round" }));
+
+  // puntos + etiquetas x
+  data.forEach(function(d,i){
+    svg.appendChild(el("circle", { cx:x(i), cy:y(d.v), r:5, fill:"var(--c-deuda)" }));
+    var tx = el("text", { x:x(i), y:H-10, "text-anchor":"middle", "font-size":"9.5", fill:"var(--muted)" });
+    tx.textContent = d.m + " 26";
+    svg.appendChild(tx);
+  });
+
+  var tb = document.getElementById("themeBtn");
+  tb.addEventListener("click", function(){
+    var cur = document.documentElement.getAttribute("data-theme");
+    var next = cur === "dark" ? "light" : (cur === "light" ? "dark" : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark"));
+    document.documentElement.setAttribute("data-theme", next);
+  });
+})();
+</script>

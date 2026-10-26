@@ -40,10 +40,11 @@
 
   * { box-sizing: border-box; }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; font-size: 15px; }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.5; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; font-size: 15px; min-height: 100%; }
   .app { max-width: 520px; margin: 0 auto; padding-left: max(14px, env(safe-area-inset-left,0px)); padding-right: max(14px, env(safe-area-inset-right,0px)); padding-block: 0 56px; }
 
-  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 4px 8px; position: sticky; top: env(safe-area-inset-top,0px); background: var(--bg); z-index: 5; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 4px 8px; position: sticky; top: env(safe-area-inset-top,0px); background: var(--bg); z-index: 5; min-height: 48px; }
   .topbar .back { background: none; border: none; color: var(--accent); font-size: .92rem; font-weight: 600; cursor: pointer; font-family: var(--font-body); visibility: hidden; }
   .topbar .back.show { visibility: visible; }
   .topbar .title { font-size: 1.22rem; font-weight: 800; letter-spacing: -.02em; }
@@ -58,14 +59,15 @@
   .view { display: none; }
   .view.active { display: block; }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-  .cell { background: var(--surface); padding: 15px 13px; display: flex; align-items: center; gap: 11px; cursor: pointer; min-width: 0; border: none; width: 100%; text-align: left; font-family: var(--font-body); color: var(--fg); }
+  .grid { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .cell { background: var(--surface); padding: 15px 18px; display: flex; align-items: center; gap: 14px; cursor: pointer; min-width: 0; border: none; width: 100%; text-align: left; font-family: var(--font-body); color: var(--fg); }
   .cell:hover { background: var(--surface-2); }
   .cell:active { background: var(--line); }
-  .cell .ic { width: 40px; height: 40px; border-radius: 11px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; line-height: 1; }
+  .cell .ic { width: 44px; height: 44px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; line-height: 1; }
   .cell .tx { min-width: 0; flex: 1 1 auto; }
-  .cell .tx .nm { font-size: .84rem; color: var(--muted); font-weight: 600; }
-  .cell .tx .vl { font-size: 1.05rem; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+  .cell .tx .nm { font-size: .86rem; color: var(--muted); font-weight: 600; }
+  .cell .tx .vl { font-size: 1.2rem; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; }
+  .cell .ar { color: var(--muted); font-size: 1.2rem; flex: none; }
   .ic-gasto { background: var(--soft-gasto); } .ic-pagar { background: var(--soft-pagar); } .ic-pagado { background: var(--soft-pagado); }
   .ic-deuda { background: var(--soft-deuda); } .ic-prest { background: var(--soft-prest); } .ic-tarj { background: var(--soft-tarj); }
 
@@ -214,32 +216,38 @@
       <button class="cell" data-go="gastos">
         <div class="ic ic-gasto">💵</div>
         <div class="tx"><div class="nm">Gastado</div><div class="vl" id="hGastado">RD$0</div></div>
+        <span class="ar">›</span>
       </button>
       <button class="cell" data-go="calendario">
         <div class="ic ic-pagar">📅</div>
         <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$199,871</div></div>
+        <span class="ar">›</span>
       </button>
       <button class="cell" data-go="calendario">
         <div class="ic ic-pagado">✅</div>
         <div class="tx"><div class="nm">Pagado</div><div class="vl" id="hPagado">RD$0</div></div>
+        <span class="ar">›</span>
       </button>
       <button class="cell" data-go="deuda">
         <div class="ic ic-deuda">🪙</div>
         <div class="tx"><div class="nm">Deuda total</div><div class="vl">RD$4,482,620</div></div>
+        <span class="ar">›</span>
       </button>
       <button class="cell" data-go="prestamos">
         <div class="ic ic-prest">🏦</div>
         <div class="tx"><div class="nm">Préstamos</div><div class="vl">RD$4,068,097</div></div>
+        <span class="ar">›</span>
       </button>
       <button class="cell" data-go="tarjetas">
         <div class="ic ic-tarj">💳</div>
         <div class="tx"><div class="nm">Tarjetas</div><div class="vl">RD$414,523</div></div>
+        <span class="ar">›</span>
       </button>
     </div>
 
     <div class="hero">
       <div class="lbl">Pendiente de pagos del mes</div>
-      <div class="big" id="heroPend">RD$199,721</div>
+      <div class="big" id="heroPend">RD$199,871</div>
     </div>
 
     <div class="gauge-wrap">
@@ -338,8 +346,8 @@
       </div>
       <div class="cal-foot">
         <span>Pagado: <b id="calPaid" style="color:var(--c-gasto)">RD$0</b></span>
-        <span>Pendiente: <b id="calPend" style="color:var(--c-pagar)">RD$199,721</b></span>
-        <span>Total: <b style="color:var(--fg)">RD$199,721</b></span>
+        <span>Pendiente: <b id="calPend" style="color:var(--c-pagar)">RD$199,871</b></span>
+        <span>Total: <b style="color:var(--fg)">RD$199,871</b></span>
       </div>
     </div>
   </div>
@@ -400,7 +408,7 @@
         <div class="debt-tile tarj"><div class="dl">Tarjetas</div><div class="dv">RD$414,523</div></div>
         <div class="debt-tile"><div class="dl">Cuota préstamos</div><div class="dv">127,941</div></div>
         <div class="debt-tile"><div class="dl">Pago tarjetas</div><div class="dv">44,430</div></div>
-        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa 27,500)</div><div class="dv">RD$199,721</div></div>
+        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa 27,500)</div><div class="dv">RD$199,871</div></div>
       </div>
     </div>
   </div>

@@ -1,9 +1,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
-<title>Finanzas App</title>
+<title>Mis Finanzas</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
-  /* Estilo "app" tipo HomeBudget: cuadrícula de atajos de colores, número central,
-     medidor circular de progreso, gráfica de deuda mes a mes. Sin ingreso: solo gastos y deudas. */
+  /* App estilo HomeBudget: inicio con atajos de colores; cada atajo abre una vista.
+     Secciones: gastos (con foto), calendario de pagos, préstamos, tarjetas, deuda. Sin ingreso. */
   :root {
     --bg: #f5f6f8;
     --surface: #ffffff;
@@ -18,6 +18,8 @@
     --c-deuda: #6a4fd0;
     --c-prest: #2a8fb0;
     --c-tarj: #d1495b;
+    --soft-gasto: #e3f3ea; --soft-pagar: #faeeda; --soft-pagado: #e5e9f8;
+    --soft-deuda: #ebe6f8; --soft-prest: #e2f0f5; --soft-tarj: #f8e4e8;
     --radius: 16px;
     --shadow: 0 1px 3px rgba(27,34,48,.07), 0 6px 20px rgba(27,34,48,.06);
     --font-body: "Inter", system-ui, -apple-system, sans-serif;
@@ -28,6 +30,8 @@
       --muted: #929cab; --line: #2a303a; --accent: #7084f0;
       --c-gasto: #43bd81; --c-pagar: #e3ad54; --c-pagado: #7084f0;
       --c-deuda: #957ef0; --c-prest: #4fb0d0; --c-tarj: #e06a7c;
+      --soft-gasto: #16271e; --soft-pagar: #2a2212; --soft-pagado: #1c2140;
+      --soft-deuda: #221b3a; --soft-prest: #142932; --soft-tarj: #2e1a1e;
       --shadow: 0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
       color-scheme: dark;
     }
@@ -37,6 +41,8 @@
     --muted: #929cab; --line: #2a303a; --accent: #7084f0;
     --c-gasto: #43bd81; --c-pagar: #e3ad54; --c-pagado: #7084f0;
     --c-deuda: #957ef0; --c-prest: #4fb0d0; --c-tarj: #e06a7c;
+    --soft-gasto: #16271e; --soft-pagar: #2a2212; --soft-pagado: #1c2140;
+    --soft-deuda: #221b3a; --soft-prest: #142932; --soft-tarj: #2e1a1e;
     --shadow: 0 1px 3px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.3);
     color-scheme: dark;
   }
@@ -48,7 +54,7 @@
     line-height: 1.45; font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased;
   }
   .app {
-    max-width: 440px; margin: 0 auto;
+    max-width: 460px; margin: 0 auto;
     padding-left: max(14px, env(safe-area-inset-left, 0px));
     padding-right: max(14px, env(safe-area-inset-right, 0px));
     padding-block: 0 56px;
@@ -58,183 +64,589 @@
     display: flex; align-items: center; justify-content: space-between;
     padding: 16px 4px 10px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); z-index: 5;
   }
-  .topbar .title { font-size: 1.3rem; font-weight: 800; letter-spacing: -.02em; }
-  .topbar .burger, .topbar .theme { background: none; border: none; color: var(--accent); font-size: 1.3rem; cursor: pointer; padding: 4px 8px; font-family: var(--font-body); }
-  .topbar .theme { font-size: .8rem; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); }
-  .month { text-align: center; font-weight: 700; color: var(--muted); font-size: .95rem; padding: 2px 0 14px; }
+  .topbar .back { background: none; border: none; color: var(--accent); font-size: .92rem; font-weight: 600; cursor: pointer; font-family: var(--font-body); display: flex; align-items: center; gap: 3px; visibility: hidden; }
+  .topbar .back.show { visibility: visible; }
+  .topbar .title { font-size: 1.22rem; font-weight: 800; letter-spacing: -.02em; }
+  .topbar .theme { font-size: .78rem; font-weight: 600; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; color: var(--muted); background: none; cursor: pointer; font-family: var(--font-body); }
+  .month { text-align: center; font-weight: 700; color: var(--muted); font-size: .92rem; padding: 2px 0 14px; }
 
-  /* Cuadrícula de atajos */
+  /* Vistas */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* Inicio: cuadrícula */
   .grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
     background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
   }
-  .cell {
-    background: var(--surface); padding: 16px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer;
-    min-width: 0;
-  }
+  .cell { background: var(--surface); padding: 16px 15px; display: flex; align-items: center; gap: 12px; cursor: pointer; min-width: 0; border: none; width: 100%; text-align: left; font-family: var(--font-body); color: var(--fg); }
   .cell:hover { background: var(--surface-2); }
-  .cell .ic {
-    width: 44px; height: 44px; border-radius: 12px; flex: none;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; line-height: 1;
-  }
+  .cell:active { background: var(--line); }
+  .cell .ic { width: 44px; height: 44px; border-radius: 12px; flex: none; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; line-height: 1; }
   .cell .tx { min-width: 0; flex: 1 1 auto; }
   .cell .tx .nm { font-size: .82rem; color: var(--muted); font-weight: 600; }
   .cell .tx .vl { font-size: 1.02rem; font-weight: 800; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; }
-  .cell .ar { color: var(--muted); font-size: 1rem; flex: none; }
-  .ic-gasto { background: color-mix(in srgb, var(--c-gasto) 16%, transparent); }
-  .ic-pagar { background: color-mix(in srgb, var(--c-pagar) 16%, transparent); }
-  .ic-pagado { background: color-mix(in srgb, var(--c-pagado) 16%, transparent); }
-  .ic-deuda { background: color-mix(in srgb, var(--c-deuda) 16%, transparent); }
-  .ic-prest { background: color-mix(in srgb, var(--c-prest) 16%, transparent); }
-  .ic-tarj { background: color-mix(in srgb, var(--c-tarj) 16%, transparent); }
+  .cell .ar { color: var(--muted); font-size: 1.1rem; flex: none; }
+  .ic-gasto { background: var(--soft-gasto); }
+  .ic-pagar { background: var(--soft-pagar); }
+  .ic-pagado { background: var(--soft-pagado); }
+  .ic-deuda { background: var(--soft-deuda); }
+  .ic-prest { background: var(--soft-prest); }
+  .ic-tarj { background: var(--soft-tarj); }
 
-  /* Número central + medidor */
-  .hero { text-align: center; padding: 26px 0 10px; }
-  .hero .lbl { font-size: .9rem; color: var(--muted); font-weight: 600; }
-  .hero .big { font-size: 2.6rem; font-weight: 800; letter-spacing: -.03em; margin-top: 2px; color: var(--c-pagar); }
-  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; }
-  .gauge-lbl { font-size: .88rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
-  .gauge { position: relative; width: 180px; height: 180px; }
+  .hero { text-align: center; padding: 24px 0 6px; }
+  .hero .lbl { font-size: .88rem; color: var(--muted); font-weight: 600; }
+  .hero .big { font-size: 2.5rem; font-weight: 800; letter-spacing: -.03em; margin-top: 2px; color: var(--c-pagar); }
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 10px; }
+  .gauge-lbl { font-size: .86rem; color: var(--muted); font-weight: 600; margin-bottom: 8px; }
+  .gauge { position: relative; width: 170px; height: 170px; }
   .gauge svg { transform: rotate(-90deg); }
-  .gauge .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; }
+  .gauge .pct { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.9rem; font-weight: 800; }
 
-  .section-line { height: 1px; background: var(--line); margin: 20px 0; }
+  /* Cards de sección */
+  .sec-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-top: 4px; }
+  .sec-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); }
+  .sec-head h2 { margin: 0; font-size: 1.15rem; font-weight: 700; }
+  .sec-head .meta { font-size: .8rem; color: var(--muted); margin-top: 2px; }
 
-  /* Gráfica de deuda */
-  .chart-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px 16px 14px; }
-  .chart-card h3 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 700; }
-  .chart-card .sub { font-size: .8rem; color: var(--muted); margin-bottom: 12px; }
-  .chart-svg { width: 100%; height: auto; display: block; }
-  .legend { display: flex; gap: 16px; justify-content: center; margin-top: 10px; font-size: .78rem; color: var(--muted); }
-  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  /* Formulario de gasto */
+  .add-form { display: flex; flex-direction: column; gap: 11px; padding: 16px 18px 18px; }
+  .add-form label { font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; margin-bottom: -5px; }
+  .add-form input, .add-form select {
+    width: 100%; padding: 12px 13px; border-radius: 11px;
+    border: 1px solid var(--line); background: var(--surface-2); color: var(--fg);
+    font-size: .95rem; font-family: var(--font-body);
+  }
+  .add-form input:focus, .add-form select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .add-form input[type="file"] { padding: 9px; font-size: .84rem; }
+  .add-form button.primary {
+    margin-top: 6px; padding: 13px; border: none; border-radius: 11px;
+    background: var(--c-gasto); color: #fff; font-weight: 700; font-size: .98rem;
+    cursor: pointer; font-family: var(--font-body);
+  }
+  .add-form button.primary:hover { filter: brightness(1.05); }
+  .photo-preview { display: flex; align-items: center; gap: 10px; }
+  .photo-preview img { width: 54px; height: 54px; object-fit: cover; border-radius: 9px; border: 1px solid var(--line); }
+  .photo-clear { background: none; border: none; color: var(--c-tarj); font-size: .82rem; cursor: pointer; padding: 0; font-family: var(--font-body); text-decoration: underline; }
+
+  .totbar { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; background: var(--soft-gasto); }
+  .totbar .t-big { font-size: 1.6rem; font-weight: 800; color: var(--c-gasto); }
+  .totbar .t-cap { font-size: .76rem; color: var(--muted); font-weight: 600; }
+  .totbar .t-side { text-align: right; font-size: .8rem; color: var(--muted); }
+  .totbar .t-side b { color: var(--fg); }
+
+  .cat-list { display: flex; flex-direction: column; gap: 10px; padding: 14px 18px; }
+  .cat-row { display: flex; align-items: center; gap: 10px; }
+  .cat-row .cname { flex: 0 0 36%; font-size: .82rem; min-width: 0; display: flex; align-items: center; gap: 7px; }
+  .cat-row .cname .cdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .cat-row .ctrack { flex: 1 1 auto; height: 18px; border-radius: 7px; background: var(--surface-2); overflow: hidden; min-width: 0; }
+  .cat-row .cfill { height: 100%; border-radius: 7px; transition: width .35s ease; }
+  .cat-row .camt { flex: 0 0 auto; font-size: .82rem; font-weight: 600; min-width: 64px; text-align: right; }
+
+  .exp-list { display: flex; flex-direction: column; }
+  .exp-item { display: flex; align-items: center; gap: 11px; padding: 11px 18px; border-top: 1px solid var(--line); font-size: .88rem; }
+  .exp-item .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .exp-item .ethumb { width: 32px; height: 32px; border-radius: 7px; object-fit: cover; border: 1px solid var(--line); flex: none; cursor: pointer; }
+  .exp-item .ethumb-none { width: 32px; height: 32px; flex: none; border-radius: 7px; border: 1px dashed var(--line); opacity: .4; }
+  .exp-item .edesc { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .exp-item .eamt { font-weight: 700; flex: none; }
+  .exp-item .edel { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 4px; flex: none; }
+  .exp-item .edel:hover { color: var(--c-tarj); }
+  .empty { color: var(--muted); font-size: .85rem; text-align: center; padding: 28px 18px; }
+
+  /* Calendario */
+  .cal-alert { margin: 14px 18px 0; padding: 12px 15px; border-radius: 11px; background: var(--soft-pagar); color: var(--c-pagar); font-size: .84rem; font-weight: 600; display: flex; align-items: center; gap: 9px; }
+  .cal-list { display: flex; flex-direction: column; }
+  .cal-week { background: var(--surface-2); padding: 7px 18px; font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+  .cal-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-top: 1px solid var(--line); cursor: pointer; }
+  .cal-row:hover { background: var(--surface-2); }
+  .cal-row .date { flex: 0 0 46px; text-align: center; font-weight: 700; line-height: .95; }
+  .cal-row .date .d { font-size: 1.35rem; display: block; }
+  .cal-row .date .m { font-size: .58rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+  .cal-row.t-prest .date .d { color: var(--c-prest); }
+  .cal-row.t-tarj .date .d { color: var(--c-tarj); }
+  .cal-row.t-casa .date .d { color: var(--c-pagar); }
+  .cal-row.t-prest { border-left: 4px solid var(--c-prest); }
+  .cal-row.t-tarj { border-left: 4px solid var(--c-tarj); }
+  .cal-row.t-casa { border-left: 4px solid var(--c-pagar); }
+  .cal-row .what { flex: 1 1 auto; min-width: 0; }
+  .cal-row .what .nm { font-size: .9rem; font-weight: 600; }
+  .cal-row .what .tag { font-size: .72rem; color: var(--muted); }
+  .cal-row .amt { flex: 0 0 auto; font-weight: 700; font-size: .95rem; }
+  .cal-row .check { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: flex; align-items: center; justify-content: center; font-size: .7rem; color: transparent; }
+  .cal-row.paid .check { background: var(--c-gasto); border-color: var(--c-gasto); color: #fff; }
+  .cal-row.paid .amt, .cal-row.paid .what .nm { color: var(--muted); text-decoration: line-through; }
+  .cal-row.soon { background: var(--soft-pagar); }
+  .cal-foot { padding: 14px 18px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: space-between; font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); }
+
+  /* Tablas */
+  .tbl-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: .86rem; min-width: 380px; }
+  th, td { padding: 10px 12px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; border-bottom: 1px solid var(--line); }
+  tbody tr { border-bottom: 1px solid var(--line); }
+  tbody tr:last-child { border-bottom: none; }
+  tfoot td { font-weight: 800; border-top: 2px solid var(--line); padding-top: 12px; }
+  .rate { color: var(--muted); }
+
+  /* Deuda: tiles */
+  .debt-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 18px; }
+  .debt-tile { background: var(--surface-2); border-radius: 12px; padding: 14px; }
+  .debt-tile.full { grid-column: 1 / -1; }
+  .debt-tile .dl { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; }
+  .debt-tile .dv { font-size: 1.4rem; font-weight: 800; margin-top: 3px; letter-spacing: -.01em; }
+  .debt-tile.total .dv { color: var(--c-deuda); }
+  .debt-tile.prest .dv { color: var(--c-prest); }
+  .debt-tile.tarj .dv { color: var(--c-tarj); }
+
+  /* Botones de respaldo */
+  .backup-btns { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--line); }
+  .backup-btns button { flex: 1; padding: 10px; border-radius: 10px; font-size: .82rem; font-weight: 600; cursor: pointer; font-family: var(--font-body); background: var(--surface-2); color: var(--fg); border: 1px solid var(--line); }
+  .backup-btns button:hover { background: var(--line); }
+
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,.85); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 12px; }
+  .lightbox .lb-close { position: absolute; top: max(16px, env(safe-area-inset-top,0px)); right: 16px; background: #fff; color: #000; border: none; border-radius: 999px; width: 40px; height: 40px; font-size: 1.1rem; cursor: pointer; font-weight: 700; }
+
+  .backup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 55; padding: 16px; }
+  .backup-overlay[hidden], .lightbox[hidden] { display: none !important; }
+  .backup-box { background: var(--surface); color: var(--fg); border-radius: 16px; padding: 22px; max-width: 440px; width: 100%; position: relative; max-height: 86vh; overflow-y: auto; }
+  .backup-box h3 { margin: 0 0 8px; font-size: 1.15rem; }
+  .backup-box p { font-size: .83rem; color: var(--muted); margin: 0 0 12px; }
+  .backup-box textarea { width: 100%; height: 130px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--fg); font-family: ui-monospace, monospace; font-size: .72rem; padding: 10px; }
+  .backup-box .ba { display: flex; gap: 10px; margin-top: 12px; }
+  .backup-box .ba button { padding: 9px 16px; border-radius: 10px; font-size: .85rem; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #fff; font-family: var(--font-body); }
+  .backup-msg { font-size: .8rem; color: var(--c-gasto); margin-top: 10px; min-height: 1.1em; }
+  .backup-x { position: absolute; top: 14px; right: 14px; background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; }
 
   .note { font-size: .74rem; color: var(--muted); text-align: center; padding-top: 18px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <div class="app">
 
   <div class="topbar">
-    <button class="burger" aria-label="Menú">☰</button>
-    <span class="title">Mis Finanzas</span>
+    <button class="back" id="backBtn">‹ Inicio</button>
+    <span class="title" id="viewTitle">Mis Finanzas</span>
     <button class="theme" id="themeBtn">Tema</button>
   </div>
   <div class="month">noviembre 2026</div>
 
-  <div class="grid">
-    <div class="cell">
-      <div class="ic ic-gasto">💵</div>
-      <div class="tx"><div class="nm">Gastado</div><div class="vl">RD$0</div></div>
-      <span class="ar">›</span>
+  <!-- INICIO -->
+  <div class="view active" id="v-home">
+    <div class="grid">
+      <button class="cell" data-go="gastos">
+        <div class="ic ic-gasto">💵</div>
+        <div class="tx"><div class="nm">Gastado</div><div class="vl" id="hGastado">RD$0</div></div>
+        <span class="ar">›</span>
+      </button>
+      <button class="cell" data-go="calendario">
+        <div class="ic ic-pagar">📅</div>
+        <div class="tx"><div class="nm">A pagar</div><div class="vl" id="hPagar">RD$199,721</div></div>
+        <span class="ar">›</span>
+      </button>
+      <button class="cell" data-go="calendario">
+        <div class="ic ic-pagado">✅</div>
+        <div class="tx"><div class="nm">Pagado</div><div class="vl" id="hPagado">RD$0</div></div>
+        <span class="ar">›</span>
+      </button>
+      <button class="cell" data-go="deuda">
+        <div class="ic ic-deuda">🪙</div>
+        <div class="tx"><div class="nm">Deuda total</div><div class="vl">RD$4,482,620</div></div>
+        <span class="ar">›</span>
+      </button>
+      <button class="cell" data-go="prestamos">
+        <div class="ic ic-prest">🏦</div>
+        <div class="tx"><div class="nm">Préstamos</div><div class="vl">RD$4,068,097</div></div>
+        <span class="ar">›</span>
+      </button>
+      <button class="cell" data-go="tarjetas">
+        <div class="ic ic-tarj">💳</div>
+        <div class="tx"><div class="nm">Tarjetas</div><div class="vl">RD$414,523</div></div>
+        <span class="ar">›</span>
+      </button>
     </div>
-    <div class="cell">
-      <div class="ic ic-pagar">📅</div>
-      <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$199,721</div></div>
-      <span class="ar">›</span>
+
+    <div class="hero">
+      <div class="lbl">Pendiente de noviembre</div>
+      <div class="big" id="heroPend">RD$199,721</div>
     </div>
-    <div class="cell">
-      <div class="ic ic-pagado">✅</div>
-      <div class="tx"><div class="nm">Pagado</div><div class="vl">RD$0</div></div>
-      <span class="ar">›</span>
-    </div>
-    <div class="cell">
-      <div class="ic ic-deuda">🪙</div>
-      <div class="tx"><div class="nm">Deuda total</div><div class="vl">RD$4,482,620</div></div>
-      <span class="ar">›</span>
-    </div>
-    <div class="cell">
-      <div class="ic ic-prest">🏦</div>
-      <div class="tx"><div class="nm">Préstamos</div><div class="vl">RD$4,068,097</div></div>
-      <span class="ar">›</span>
-    </div>
-    <div class="cell">
-      <div class="ic ic-tarj">💳</div>
-      <div class="tx"><div class="nm">Tarjetas</div><div class="vl">RD$414,523</div></div>
-      <span class="ar">›</span>
+
+    <div class="gauge-wrap">
+      <div class="gauge-lbl">Pagos del mes saldados</div>
+      <div class="gauge">
+        <svg width="170" height="170" viewBox="0 0 170 170">
+          <circle cx="85" cy="85" r="72" fill="none" stroke="var(--surface-2)" stroke-width="17"/>
+          <circle id="gaugeArc" cx="85" cy="85" r="72" fill="none" stroke="var(--c-gasto)" stroke-width="17" stroke-linecap="round" stroke-dasharray="452.4" stroke-dashoffset="452.4"/>
+        </svg>
+        <div class="pct" id="gaugePct">0%</div>
+      </div>
     </div>
   </div>
 
-  <div class="hero">
-    <div class="lbl">Pendiente del mes</div>
-    <div class="big">RD$199,721</div>
-  </div>
-
-  <div class="gauge-wrap">
-    <div class="gauge-lbl">Pagos del mes saldados</div>
-    <div class="gauge">
-      <svg width="180" height="180" viewBox="0 0 180 180">
-        <circle cx="90" cy="90" r="76" fill="none" stroke="var(--surface-2)" stroke-width="18"/>
-        <circle id="gaugeArc" cx="90" cy="90" r="76" fill="none" stroke="var(--c-pagado)" stroke-width="18" stroke-linecap="round"
-          stroke-dasharray="477.5" stroke-dashoffset="477.5"/>
-      </svg>
-      <div class="pct" id="gaugePct">0%</div>
+  <!-- GASTOS -->
+  <div class="view" id="v-gastos">
+    <div class="sec-card">
+      <div class="totbar">
+        <div><div class="t-big" id="gTotal">RD$0</div><div class="t-cap">Gastado en noviembre</div></div>
+        <div class="t-side"><div>Registros: <b id="gCount">0</b></div><div>Con foto: <b id="gPhoto">0</b></div></div>
+      </div>
+      <form class="add-form" id="addForm">
+        <label for="eDesc">Descripción</label>
+        <input id="eDesc" type="text" placeholder="Ej: Supermercado Nacional" autocomplete="off" required>
+        <label for="eAmt">Monto (RD$)</label>
+        <input id="eAmt" type="number" min="0" step="1" placeholder="0" inputmode="decimal" required>
+        <label for="eCat">Categoría</label>
+        <select id="eCat">
+          <option value="Comida">Comida / supermercado</option>
+          <option value="Combustible">Combustible</option>
+          <option value="Digital">Pagos digitales / streaming</option>
+          <option value="Servicios">Servicios (agua, luz, celular, internet)</option>
+          <option value="Casa">Casa</option>
+          <option value="Otros">Otros</option>
+        </select>
+        <label for="ePhoto">Foto de la factura (opcional)</label>
+        <input id="ePhoto" type="file" accept="image/*" capture="environment">
+        <div id="photoPreview" class="photo-preview" hidden>
+          <img id="photoThumb" alt="Vista previa">
+          <button type="button" id="photoClear" class="photo-clear">Quitar foto</button>
+        </div>
+        <button type="submit" class="primary">Agregar gasto</button>
+      </form>
+      <div class="cat-list" id="catList"></div>
+      <div class="exp-list" id="expList"></div>
+      <div class="backup-btns">
+        <button type="button" id="btnExport">Respaldar datos</button>
+        <button type="button" id="btnImport">Restaurar</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
     </div>
   </div>
 
-  <div class="section-line"></div>
-
-  <div class="chart-card">
-    <h3>Deuda total mes a mes</h3>
-    <div class="sub">Tu progreso bajando la deuda</div>
-    <svg class="chart-svg" viewBox="0 0 380 190" id="debtChart" role="img" aria-label="Gráfica de deuda mensual"></svg>
-    <div class="legend"><span><i style="background:var(--c-deuda)"></i>Deuda total (millones RD$)</span></div>
+  <!-- CALENDARIO -->
+  <div class="view" id="v-calendario">
+    <div class="sec-card">
+      <div class="cal-alert" id="calAlert" hidden></div>
+      <div class="cal-list" id="calList">
+        <div class="cal-week">Semana 1 · 1–7 nov</div>
+        <div class="cal-row t-prest" data-id="c1"><span class="date"><span class="d">1</span><span class="m">nov</span></span><span class="what"><span class="nm">Scotia Prest</span><span class="tag">Préstamo · 20%</span></span><span class="amt">12,895</span><span class="check">✓</span></div>
+        <div class="cal-row t-tarj" data-id="c2"><span class="date"><span class="d">2</span><span class="m">nov</span></span><span class="what"><span class="nm">Qik T</span><span class="tag">Tarjeta · pago mínimo</span></span><span class="amt">21,610</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c3"><span class="date"><span class="d">6</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD crediclicl</span><span class="tag">Préstamo · 19.2%</span></span><span class="amt">13,719</span><span class="check">✓</span></div>
+        <div class="cal-week">Semana 2 · 8–14 nov</div>
+        <div class="cal-row t-prest" data-id="c4"><span class="date"><span class="d">9</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 6931</span><span class="tag">Préstamo · 23.5%</span></span><span class="amt">11,616</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c5"><span class="date"><span class="d">12</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 2587</span><span class="tag">Préstamo · 24%</span></span><span class="amt">17,017</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c6"><span class="date"><span class="d">12</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 3861</span><span class="tag">Préstamo · 17%</span></span><span class="amt">16,694</span><span class="check">✓</span></div>
+        <div class="cal-week">Semana 3 · 15–21 nov</div>
+        <div class="cal-row t-prest" data-id="c7"><span class="date"><span class="d">16</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Credimas</span><span class="tag">Préstamo</span></span><span class="amt">4,738</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c8"><span class="date"><span class="d">20</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 5281</span><span class="tag">Préstamo · 16.8%</span></span><span class="amt">12,841</span><span class="check">✓</span></div>
+        <div class="cal-week">Semana 4 · 22–30 nov</div>
+        <div class="cal-row t-prest" data-id="c9"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD Prest 9785</span><span class="tag">Consolidación · 18%</span></span><span class="amt">22,791</span><span class="check">✓</span></div>
+        <div class="cal-row t-tarj" data-id="c10"><span class="date"><span class="d">22</span><span class="m">nov</span></span><span class="what"><span class="nm">BHD T (USD)</span><span class="tag">Tarjeta · saldo en dólares</span></span><span class="amt">22,820</span><span class="check">✓</span></div>
+        <div class="cal-week">Sin fecha fija</div>
+        <div class="cal-row t-prest" data-id="c11"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Scotia cuotas</span><span class="tag">Préstamo · 20%</span></span><span class="amt">3,856</span><span class="check">✓</span></div>
+        <div class="cal-row t-prest" data-id="c12"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Reservas Pres</span><span class="tag">Préstamo</span></span><span class="amt">11,774</span><span class="check">✓</span></div>
+        <div class="cal-row t-casa" data-id="c13"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Casa</span><span class="tag">Vivienda</span></span><span class="amt">27,500</span><span class="check">✓</span></div>
+      </div>
+      <div class="cal-foot">
+        <span>Pagado: <b id="calPaid" style="color:var(--c-gasto)">RD$0</b></span>
+        <span>Pendiente: <b id="calPend" style="color:var(--c-pagar)">RD$199,721</b></span>
+        <span>Total: <b style="color:var(--fg)">RD$199,721</b></span>
+      </div>
+    </div>
   </div>
 
-  <div class="note">Vista de ejemplo · estilo app. Los números vienen de tu tabla de noviembre.</div>
+  <!-- PRESTAMOS -->
+  <div class="view" id="v-prestamos">
+    <div class="sec-card">
+      <div class="sec-head"><h2>Préstamos</h2><div class="meta">deuda 4,068,097 · cuota mensual 127,941</div></div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>Banco</th><th>Interés</th><th>Deuda</th><th>Cuota</th></tr></thead>
+          <tbody>
+            <tr><td>Scotia Prest</td><td class="rate">20.0%</td><td>366,146</td><td>12,895</td></tr>
+            <tr><td>Scotia cuotas</td><td class="rate">20.0%</td><td>59,557</td><td>3,856</td></tr>
+            <tr><td>Reservas Pres</td><td class="rate">—</td><td>272,510</td><td>11,774</td></tr>
+            <tr><td>BHD Credimas</td><td class="rate">—</td><td>64,002</td><td>4,738</td></tr>
+            <tr><td>BHD crediclicl</td><td class="rate">19.2%</td><td>433,554</td><td>13,719</td></tr>
+            <tr><td>BHD Prest 6931</td><td class="rate">23.5%</td><td>332,374</td><td>11,616</td></tr>
+            <tr><td>BHD Prest 2587</td><td class="rate">24.0%</td><td>427,184</td><td>17,017</td></tr>
+            <tr><td>BHD Prest 3861</td><td class="rate">17.0%</td><td>557,971</td><td>16,694</td></tr>
+            <tr><td>BHD Prest 5281</td><td class="rate">16.8%</td><td>500,799</td><td>12,841</td></tr>
+            <tr><td>BHD Prest 9785</td><td class="rate">18.0%</td><td>854,000</td><td>22,791</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td></td><td>4,068,097</td><td>127,941</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
 
+  <!-- TARJETAS -->
+  <div class="view" id="v-tarjetas">
+    <div class="sec-card">
+      <div class="sec-head"><h2>Tarjetas de crédito</h2><div class="meta">deuda 414,523</div></div>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th>Tarjeta</th><th>Tasa</th><th>Deuda</th><th>Pago</th></tr></thead>
+          <tbody>
+            <tr><td>Reservas T</td><td class="rate">60%</td><td>304,590</td><td>—</td></tr>
+            <tr><td>Qik T</td><td class="rate">60%</td><td>306,933</td><td>21,610</td></tr>
+            <tr><td>Scotia T</td><td class="rate">60%</td><td>0</td><td>—</td></tr>
+            <tr><td>BHD T (RD$)</td><td class="rate">60%</td><td>3,000</td><td>—</td></tr>
+            <tr><td>BHD T (USD)</td><td class="rate">60%</td><td>—</td><td>22,820</td></tr>
+          </tbody>
+          <tfoot><tr><td>Total</td><td></td><td>414,523</td><td>44,430</td></tr></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEUDA -->
+  <div class="view" id="v-deuda">
+    <div class="sec-card">
+      <div class="sec-head"><h2>Resumen de deuda</h2><div class="meta">noviembre 2026</div></div>
+      <div class="debt-tiles">
+        <div class="debt-tile total full"><div class="dl">Deuda total</div><div class="dv">RD$4,482,620</div></div>
+        <div class="debt-tile prest"><div class="dl">Préstamos</div><div class="dv">RD$4,068,097</div></div>
+        <div class="debt-tile tarj"><div class="dl">Tarjetas</div><div class="dv">RD$414,523</div></div>
+        <div class="debt-tile"><div class="dl">Cuota préstamos</div><div class="dv">127,941</div></div>
+        <div class="debt-tile"><div class="dl">Pago tarjetas</div><div class="dv">44,430</div></div>
+        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa)</div><div class="dv">RD$199,721</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" id="homeNote">Toca un recuadro para entrar. Tus datos se guardan en este navegador.</div>
+
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button type="button" class="lb-close" id="lbClose" aria-label="Cerrar">✕</button>
+  <img id="lbImg" alt="Factura ampliada">
+</div>
+
+<div class="backup-overlay" id="backupOverlay" hidden>
+  <div class="backup-box">
+    <button type="button" class="backup-x" id="backupClose" aria-label="Cerrar">✕</button>
+    <h3>Respaldo de tus datos</h3>
+    <p>Copia este texto y guárdalo en una nota o correo. Para restaurarlo, guárdalo como archivo .json y usa «Restaurar».</p>
+    <textarea id="backupText" readonly></textarea>
+    <div class="ba"><button type="button" id="backupCopy">Copiar texto</button></div>
+    <div class="backup-msg" id="backupMsg"></div>
+  </div>
 </div>
 
 <script>
 (function(){
   "use strict";
-  // Medidor: 0% ejemplo (se llenaría con los pagos marcados en el panel real)
-  var pct = 0;
-  var circ = 2 * Math.PI * 76;
-  var arc = document.getElementById("gaugeArc");
-  arc.setAttribute("stroke-dasharray", circ.toFixed(1));
-  arc.setAttribute("stroke-dashoffset", (circ * (1 - pct/100)).toFixed(1));
-  document.getElementById("gaugePct").textContent = pct + "%";
+  var STORE = "finanzas_gastos_v1";
+  var PAID = "finanzas_pagos_nov_v1";
+  var catColors = { Comida:"#2f9e68", Combustible:"#d98a2b", Digital:"#7159d4", Servicios:"#2a8fb0", Casa:"#c0473c", Otros:"#8a8277" };
+  var cats = ["Comida","Combustible","Digital","Servicios","Casa","Otros"];
+  var expenses = [], paid = {}, pendingPhoto = null;
+  var MONTH = "2026-11", MONTH_NAME = "noviembre";
 
-  // Gráfica de deuda: dos puntos conocidos + proyección de ejemplo
-  var data = [
-    { m: "oct", v: 4922873 },
-    { m: "nov", v: 4482620 }
-  ];
-  var W = 380, H = 190, padL = 42, padR = 14, padT = 14, padB = 28;
-  var vals = data.map(function(d){ return d.v; });
-  var maxV = 5000000, minV = 4000000;
-  function x(i){ return padL + (W - padL - padR) * (data.length === 1 ? 0.5 : i/(data.length-1)); }
-  function y(v){ return padT + (H - padT - padB) * (1 - (v - minV)/(maxV - minV)); }
+  var calAmts = { c1:12895,c2:21610,c3:13719,c4:11616,c5:17017,c6:16694,c7:4738,c8:12841,c9:22791,c10:22820,c11:3856,c12:11774,c13:27500 };
+  var calDays = { c1:1,c2:2,c3:6,c4:9,c5:12,c6:12,c7:16,c8:20,c9:22,c10:22,c11:null,c12:null,c13:null };
+  var calNames = { c1:"Scotia Prest",c2:"Qik T",c3:"BHD crediclicl",c4:"BHD Prest 6931",c5:"BHD Prest 2587",c6:"BHD Prest 3861",c7:"BHD Credimas",c8:"BHD Prest 5281",c9:"BHD Prest 9785",c10:"BHD T (USD)",c11:"Scotia cuotas",c12:"Reservas Pres",c13:"Casa" };
+  var REF_MONTH = 10, REF_YEAR = 2026, CAL_TOTAL = 199721;
 
-  var svg = document.getElementById("debtChart");
-  var ns = "http://www.w3.org/2000/svg";
-  function el(tag, attrs){ var e = document.createElementNS(ns, tag); for(var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+  var titles = { home:"Mis Finanzas", gastos:"Gastos", calendario:"Pagos", prestamos:"Préstamos", tarjetas:"Tarjetas", deuda:"Deuda" };
 
-  // grid horizontal
-  [4000000,4500000,5000000].forEach(function(gv){
-    svg.appendChild(el("line", { x1:padL, y1:y(gv), x2:W-padR, y2:y(gv), stroke:"var(--line)", "stroke-width":1 }));
-    var t = el("text", { x:padL-6, y:y(gv)+3, "text-anchor":"end", "font-size":"9", fill:"var(--muted)" });
-    t.textContent = (gv/1000000).toFixed(1) + "M";
-    svg.appendChild(t);
+  function load(){
+    try { var r = localStorage.getItem(STORE); if(r) expenses = JSON.parse(r)||[]; } catch(e){ expenses=[]; }
+    try { var p = localStorage.getItem(PAID); if(p) paid = JSON.parse(p)||{}; } catch(e){ paid={}; }
+  }
+  function save(){ localStorage.setItem(STORE, JSON.stringify(expenses)); }
+  function savePaid(){ try { localStorage.setItem(PAID, JSON.stringify(paid)); } catch(e){} }
+  function fmt(n){ return "RD$" + Math.round(n).toLocaleString("en-US"); }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+
+  // Navegación entre vistas
+  function go(name){
+    Array.prototype.forEach.call(document.querySelectorAll(".view"), function(v){ v.classList.remove("active"); });
+    var el = document.getElementById("v-" + name);
+    if(el) el.classList.add("active");
+    document.getElementById("viewTitle").textContent = titles[name] || "Mis Finanzas";
+    document.getElementById("backBtn").classList.toggle("show", name !== "home");
+    document.getElementById("homeNote").style.display = (name === "home") ? "" : "none";
+    window.scrollTo(0,0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-go]"), function(btn){
+    btn.addEventListener("click", function(){ go(btn.getAttribute("data-go")); });
+  });
+  document.getElementById("backBtn").addEventListener("click", function(){ go("home"); });
+
+  // Calendario
+  function renderCal(){
+    var total = 0, pagado = 0;
+    Object.keys(calAmts).forEach(function(id){
+      total += calAmts[id];
+      var row = document.querySelector('.cal-row[data-id="'+id+'"]');
+      if(!row) return;
+      if(paid[id]){ row.classList.add("paid"); pagado += calAmts[id]; } else row.classList.remove("paid");
+    });
+    document.getElementById("calPaid").textContent = fmt(pagado);
+    document.getElementById("calPend").textContent = fmt(total - pagado);
+    // inicio
+    document.getElementById("hPagado").textContent = fmt(pagado);
+    document.getElementById("heroPend").textContent = fmt(total - pagado);
+    var pct = total > 0 ? Math.round(pagado/total*100) : 0;
+    var circ = 2 * Math.PI * 72;
+    var arc = document.getElementById("gaugeArc");
+    arc.setAttribute("stroke-dashoffset", (circ*(1-pct/100)).toFixed(1));
+    document.getElementById("gaugePct").textContent = pct + "%";
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".cal-row"), function(row){
+    row.addEventListener("click", function(){
+      var id = row.getAttribute("data-id");
+      paid[id] = !paid[id];
+      savePaid(); renderCal(); renderAlerts();
+    });
   });
 
-  // línea
-  var dpath = data.map(function(d,i){ return (i===0?"M":"L") + x(i) + " " + y(d.v); }).join(" ");
-  svg.appendChild(el("path", { d:dpath, fill:"none", stroke:"var(--c-deuda)", "stroke-width":3, "stroke-linecap":"round", "stroke-linejoin":"round" }));
+  function renderAlerts(){
+    var now = new Date(), alertEl = document.getElementById("calAlert"), upcoming = [];
+    Array.prototype.forEach.call(document.querySelectorAll(".cal-row.soon"), function(r){ r.classList.remove("soon"); });
+    var inRef = (now.getFullYear()===REF_YEAR && now.getMonth()===REF_MONTH);
+    Object.keys(calDays).forEach(function(id){
+      var day = calDays[id];
+      if(day===null || paid[id]) return;
+      if(inRef){ var diff = day - now.getDate(); if(diff>=0 && diff<=3) upcoming.push({id:id,diff:diff}); }
+    });
+    if(upcoming.length===0){
+      if(!inRef){ alertEl.innerHTML = '<span>🔔</span><span>Tu primer pago de noviembre es <b>Scotia Prest</b> (RD$12,895) el día 1.</span>'; alertEl.hidden=false; }
+      else alertEl.hidden=true;
+      return;
+    }
+    upcoming.sort(function(a,b){return a.diff-b.diff;});
+    var total = upcoming.reduce(function(s,u){return s+calAmts[u.id];},0);
+    upcoming.forEach(function(u){ var r=document.querySelector('.cal-row[data-id="'+u.id+'"]'); if(r) r.classList.add("soon"); });
+    var txt = upcoming.length===1 ? ("Pago próximo: <b>"+calNames[upcoming[0].id]+"</b> "+(upcoming[0].diff===0?"hoy":"en "+upcoming[0].diff+" día(s)")+" · "+fmt(calAmts[upcoming[0].id])) : (upcoming.length+" pagos en los próximos 3 días · total "+fmt(total));
+    alertEl.innerHTML = '<span>🔔</span><span>'+txt+'</span>'; alertEl.hidden=false;
+  }
 
-  // puntos + etiquetas x
-  data.forEach(function(d,i){
-    svg.appendChild(el("circle", { cx:x(i), cy:y(d.v), r:5, fill:"var(--c-deuda)" }));
-    var tx = el("text", { x:x(i), y:H-10, "text-anchor":"middle", "font-size":"9.5", fill:"var(--muted)" });
-    tx.textContent = d.m + " 26";
-    svg.appendChild(tx);
+  // Gastos
+  function renderGastos(){
+    var current = expenses.filter(function(e){ return e.month===MONTH; });
+    var total = current.reduce(function(s,e){return s+e.amt;},0);
+    var wph = current.filter(function(e){return e.photo;}).length;
+    document.getElementById("gTotal").textContent = fmt(total);
+    document.getElementById("hGastado").textContent = fmt(total);
+    document.getElementById("gCount").textContent = current.length;
+    document.getElementById("gPhoto").textContent = wph;
+
+    var byCat = {}; cats.forEach(function(c){ byCat[c]=0; });
+    current.forEach(function(e){ byCat[e.cat]=(byCat[e.cat]||0)+e.amt; });
+    var max = Math.max.apply(null, cats.map(function(c){return byCat[c];}).concat([1]));
+    var cl = document.getElementById("catList"); cl.innerHTML="";
+    cats.forEach(function(c){
+      var amt=byCat[c], pct=max>0?(amt/max*100):0;
+      var row=document.createElement("div"); row.className="cat-row";
+      row.innerHTML='<span class="cname"><span class="cdot" style="background:'+catColors[c]+'"></span>'+c+'</span><span class="ctrack"><span class="cfill" style="width:'+pct+'%;background:'+catColors[c]+'"></span></span><span class="camt">'+fmt(amt)+'</span>';
+      cl.appendChild(row);
+    });
+
+    var el = document.getElementById("expList"); el.innerHTML="";
+    if(current.length===0){ el.innerHTML='<div class="empty">Aún no has registrado gastos. Agrega el primero arriba.</div>'; return; }
+    current.slice().reverse().forEach(function(e){
+      var item=document.createElement("div"); item.className="exp-item";
+      var thumb = e.photo ? '<img class="ethumb" src="'+e.photo+'" data-full="'+e.id+'" alt="Factura">' : '<span class="ethumb-none"></span>';
+      item.innerHTML='<span class="dot" style="background:'+catColors[e.cat]+'"></span>'+thumb+'<span class="edesc">'+escapeHtml(e.desc)+'</span><span class="eamt">'+fmt(e.amt)+'</span><button class="edel" data-id="'+e.id+'" aria-label="Eliminar">✕</button>';
+      el.appendChild(item);
+    });
+    Array.prototype.forEach.call(el.querySelectorAll(".edel"), function(b){
+      b.addEventListener("click", function(){ var id=b.getAttribute("data-id"); expenses=expenses.filter(function(x){return String(x.id)!==String(id);}); try{save();}catch(e){} renderGastos(); });
+    });
+    Array.prototype.forEach.call(el.querySelectorAll(".ethumb"), function(img){
+      img.addEventListener("click", function(){ var id=img.getAttribute("data-full"); var e=expenses.filter(function(x){return String(x.id)===String(id);})[0]; if(e&&e.photo) openLightbox(e.photo); });
+    });
+  }
+
+  function compressImage(file, cb){
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var img=new Image();
+      img.onload=function(){
+        var max=1000,w=img.width,h=img.height;
+        if(w>max||h>max){ if(w>=h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;} }
+        var c=document.createElement("canvas"); c.width=w; c.height=h;
+        c.getContext("2d").drawImage(img,0,0,w,h);
+        try{ cb(c.toDataURL("image/jpeg",0.7)); }catch(err){ cb(ev.target.result); }
+      };
+      img.onerror=function(){ cb(ev.target.result); };
+      img.src=ev.target.result;
+    };
+    reader.onerror=function(){ cb(null); };
+    reader.readAsDataURL(file);
+  }
+
+  function openLightbox(src){ document.getElementById("lbImg").src=src; document.getElementById("lightbox").hidden=false; }
+  function closeLightbox(){ document.getElementById("lightbox").hidden=true; document.getElementById("lbImg").src=""; }
+  document.getElementById("lbClose").addEventListener("click", closeLightbox);
+  document.getElementById("lightbox").addEventListener("click", function(ev){ if(ev.target===this) closeLightbox(); });
+  document.addEventListener("keydown", function(ev){ if(ev.key==="Escape"){ closeLightbox(); document.getElementById("backupOverlay").hidden=true; } });
+
+  var photoInput=document.getElementById("ePhoto"), photoThumb=document.getElementById("photoThumb"), photoPreview=document.getElementById("photoPreview");
+  photoInput.addEventListener("change", function(){
+    var f=photoInput.files&&photoInput.files[0]; if(!f) return;
+    compressImage(f,function(d){ if(!d)return; pendingPhoto=d; photoThumb.src=d; photoPreview.hidden=false; });
+  });
+  document.getElementById("photoClear").addEventListener("click", function(){ pendingPhoto=null; photoInput.value=""; photoThumb.src=""; photoPreview.hidden=true; });
+
+  document.getElementById("addForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var desc=document.getElementById("eDesc").value.trim();
+    var amt=parseFloat(document.getElementById("eAmt").value);
+    var cat=document.getElementById("eCat").value;
+    if(!desc||!(amt>0)) return;
+    expenses.push({ id:Date.now()+"-"+Math.random().toString(36).slice(2,6), desc:desc, amt:amt, cat:cat, month:MONTH, photo:pendingPhoto||null });
+    try{ save(); }catch(err){ document.getElementById("homeNote").textContent="Almacenamiento lleno. Elimina gastos viejos con foto."; }
+    document.getElementById("eDesc").value=""; document.getElementById("eAmt").value="";
+    pendingPhoto=null; photoInput.value=""; photoThumb.src=""; photoPreview.hidden=true;
+    document.getElementById("eDesc").focus();
+    renderGastos();
   });
 
-  var tb = document.getElementById("themeBtn");
-  tb.addEventListener("click", function(){
-    var cur = document.documentElement.getAttribute("data-theme");
-    var next = cur === "dark" ? "light" : (cur === "light" ? "dark" : (matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "dark"));
+  // Respaldo
+  document.getElementById("btnExport").addEventListener("click", function(){
+    var data=JSON.stringify({version:1,exported:new Date().toISOString(),expenses:expenses,paid:paid},null,2);
+    document.getElementById("backupText").value=data; document.getElementById("backupMsg").textContent="";
+    document.getElementById("backupOverlay").hidden=false;
+  });
+  document.getElementById("btnImport").addEventListener("click", function(){ document.getElementById("importFile").click(); });
+  document.getElementById("importFile").addEventListener("change", function(){
+    var f=this.files&&this.files[0]; if(!f) return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{ var o=JSON.parse(ev.target.result);
+        if(o&&Array.isArray(o.expenses)){ expenses=o.expenses; if(o.paid) paid=o.paid; try{save();}catch(e){} savePaid(); renderGastos(); renderCal(); renderAlerts(); document.getElementById("homeNote").textContent="Datos restaurados."; }
+      }catch(err){ document.getElementById("homeNote").textContent="No se pudo leer el archivo."; }
+    };
+    reader.readAsText(f); this.value="";
+  });
+  document.getElementById("backupClose").addEventListener("click", function(){ document.getElementById("backupOverlay").hidden=true; });
+  document.getElementById("backupOverlay").addEventListener("click", function(ev){ if(ev.target===this) this.hidden=true; });
+  document.getElementById("backupCopy").addEventListener("click", function(){
+    var ta=document.getElementById("backupText"); ta.select();
+    var ok=false; try{ ok=document.execCommand("copy"); }catch(e){}
+    if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(ta.value).then(function(){ document.getElementById("backupMsg").textContent="Copiado. Pégalo en una nota o correo."; }).catch(function(){ document.getElementById("backupMsg").textContent=ok?"Copiado.":"Selecciona y copia manualmente."; }); }
+    else document.getElementById("backupMsg").textContent=ok?"Copiado.":"Selecciona y copia manualmente.";
+  });
+
+  document.getElementById("themeBtn").addEventListener("click", function(){
+    var cur=document.documentElement.getAttribute("data-theme");
+    var next=cur==="dark"?"light":(cur==="light"?"dark":(matchMedia("(prefers-color-scheme: dark)").matches?"light":"dark"));
     document.documentElement.setAttribute("data-theme", next);
   });
+
+  // asegurar que los overlays arranquen cerrados
+  document.getElementById("backupOverlay").hidden = true;
+  document.getElementById("lightbox").hidden = true;
+
+  load();
+  renderCal();
+  renderAlerts();
+  renderGastos();
 })();
 </script>

@@ -472,7 +472,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v2";
+  var DEBT = "finanzas_deuda_v3";
 
   // Datos editables de deuda (valores por defecto)
   var prestamos = [
@@ -480,12 +480,12 @@
     { nombre:"Scotia cuotas", tasa:"20.0%", deuda:59557, cuota:3856 },
     { nombre:"Reservas Pres T", tasa:"—", deuda:272510, cuota:11774 },
     { nombre:"BHD Credimas", tasa:"—", deuda:64003, cuota:4738 },
-    { nombre:"BHD crediclicl", tasa:"19.2%", deuda:433554, cuota:13719 },
-    { nombre:"BHD Prest 6931", tasa:"23.5%", deuda:332375, cuota:11616 },
-    { nombre:"BHD Prest 2587", tasa:"24.0%", deuda:427184, cuota:16294 },
-    { nombre:"BHD Prest 3861", tasa:"17.0%", deuda:557971, cuota:16694 },
-    { nombre:"BHD Prest 5281", tasa:"16.8%", deuda:500799, cuota:12841 },
-    { nombre:"BHD Prest 9785", tasa:"18.0%", deuda:854000, cuota:22800 }
+    { nombre:"BHD crediclicl", tasa:"19.2%", deuda:434469, cuota:13719 },
+    { nombre:"BHD Prest 6931", tasa:"23.5%", deuda:333233, cuota:11616 },
+    { nombre:"BHD Prest 2587", tasa:"24.0%", deuda:428315, cuota:16294 },
+    { nombre:"BHD Prest 3861", tasa:"17.0%", deuda:559018, cuota:16694 },
+    { nombre:"BHD Prest 5281", tasa:"16.8%", deuda:501732, cuota:12841 },
+    { nombre:"BHD Prest 9785", tasa:"18.0%", deuda:855708, cuota:22800 }
   ];
   var tarjetas = [
     { nombre:"Qik T", tasa:"60%", deuda:306828, cuota:21604 },

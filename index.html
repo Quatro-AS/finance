@@ -191,6 +191,9 @@
   .pend-foot b { color: var(--c-pagar); font-weight: 800; }
   .pend-foot span { display: block; font-size: .76rem; margin-top: 2px; }
   .side-title2 { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; padding: 4px 18px 8px; }
+  tr.saldada td { color: var(--muted); }
+  tr.saldada .cellval { opacity: .7; }
+  .badge-ok { display: inline-block; background: var(--soft-gasto); color: var(--c-gasto); font-size: .62rem; font-weight: 700; padding: 1px 6px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; margin-left: 4px; vertical-align: middle; }
   .cuadre-aviso { margin: 10px 18px; padding: 10px 14px; border-radius: 10px; font-size: .82rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .cuadre-ok { background: var(--soft-gasto); color: var(--c-gasto); }
   .cuadre-warn { background: var(--soft-pagar); color: var(--c-pagar); }
@@ -484,7 +487,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v10";
+  var DEBT = "finanzas_deuda_v11";
   var HIST = "finanzas_historial_v1";
   var histDeuda = {}; // { "2026-11": 4221766, ... } deuda total registrada por mes
 
@@ -542,25 +545,27 @@
     var tb = document.querySelector("#"+tbodyId+" tbody");
     tb.innerHTML = "";
     var totD = 0, totC = 0;
-    data.forEach(function(row, i){
-      totD += row.deuda; totC += row.cuota;
+    data.forEach(function(row){ totD += row.deuda; totC += row.cuota; });
+    // ordenar visualmente por deuda (mayor arriba); las saldadas (0) al fondo
+    var ordenado = data.slice().sort(function(a,b){ return b.deuda - a.deuda; });
+    ordenado.forEach(function(row){
+      var saldada = (row.deuda === 0);
       var tr = document.createElement("tr");
+      if(saldada) tr.className = "saldada";
       tr.innerHTML =
-        '<td class="edit" data-f="nombre"><span class="cellval">'+escapeHtml(row.nombre)+'</span></td>' +
+        '<td class="edit" data-f="nombre"><span class="cellval">'+escapeHtml(row.nombre)+(saldada?' <span class="badge-ok">saldada</span>':'')+'</span></td>' +
         '<td class="edit rate" data-f="tasa"><span class="cellval">'+escapeHtml(row.tasa)+'</span></td>' +
         '<td class="edit" data-f="deuda"><span class="cellval">'+fmtNum(row.deuda)+'</span></td>' +
         '<td class="edit" data-f="cuota"><span class="cellval">'+fmtNum(row.cuota)+'</span></td>' +
         '<td class="delcol"><button type="button" aria-label="Eliminar">✕</button></td>';
-      // editar celda al tocar
       Array.prototype.forEach.call(tr.querySelectorAll("td.edit"), function(td){
         td.addEventListener("click", function(){
           if(td.querySelector("input")) return;
           var field = td.getAttribute("data-f");
-          var cur = row[field];
           var inp = document.createElement("input");
           inp.className = "cellinput";
           inp.type = (field==="nombre"||field==="tasa") ? "text" : "number";
-          inp.value = cur;
+          inp.value = row[field];
           td.innerHTML = ""; td.appendChild(inp); inp.focus(); inp.select();
           function commit(){
             var val = (field==="nombre"||field==="tasa") ? inp.value.trim() : parseNum(inp.value);
@@ -572,7 +577,9 @@
         });
       });
       tr.querySelector(".delcol button").addEventListener("click", function(){
-        data.splice(i,1); saveDebt(); onChange();
+        var idx = data.indexOf(row);
+        if(idx>=0) data.splice(idx,1);
+        saveDebt(); onChange();
       });
       tb.appendChild(tr);
     });

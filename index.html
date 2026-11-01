@@ -186,6 +186,8 @@
   .addrow-btn { width: 100%; padding: 11px; border: 1px dashed var(--line); border-radius: 11px; background: var(--surface-2); color: var(--accent); font-weight: 600; font-size: .88rem; cursor: pointer; font-family: var(--font-body); }
   .addrow-btn:hover { background: var(--line); }
   .editable-inline { border-bottom: 1px dashed var(--muted); cursor: pointer; }
+  .pago-nota { font-size: .76rem; color: var(--c-tarj); margin-top: -4px; font-weight: 600; }
+  .exp-item .epago { font-size: .68rem; color: var(--muted); flex: none; }
   .table-actions { display: flex; gap: 8px; padding: 12px 18px; flex-wrap: wrap; }
   .table-actions button { flex: 1; min-width: 130px; padding: 11px; border-radius: 11px; font-weight: 600; font-size: .86rem; cursor: pointer; font-family: var(--font-body); }
   .table-actions .paste-btn { border: none; background: var(--accent); color: #fff; }
@@ -249,13 +251,8 @@
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="calendario">
-        <div class="ic ic-pagar">📅</div>
-        <div class="tx"><div class="nm">A pagar</div><div class="vl" id="hPagar">RD$148,717</div></div>
-        <span class="ar">›</span>
-      </button>
-      <button class="cell" data-go="calendario">
         <div class="ic ic-pagado">✅</div>
-        <div class="tx"><div class="nm">Pagado</div><div class="vl" id="hPagado">RD$0</div></div>
+        <div class="tx"><div class="nm">Pagado del mes</div><div class="vl" id="hPagado">RD$0</div></div>
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="deuda">
@@ -277,7 +274,8 @@
 
     <div class="hero">
       <div class="lbl">Pendiente de pagos del mes</div>
-      <div class="big" id="heroPend">RD$176,931</div>
+      <div class="big" id="heroPend">RD$148,717</div>
+      <div class="lbl" id="heroSub" style="margin-top:4px">de RD$148,717 del mes</div>
     </div>
 
     <div class="gauge-wrap">
@@ -332,6 +330,9 @@
           <option value="Casa">Casa</option>
           <option value="Otros">Otros</option>
         </select>
+        <label for="ePago">Pagado con</label>
+        <select id="ePago"></select>
+        <div id="pagoNota" class="pago-nota" hidden>Este gasto se sumará a la deuda de la tarjeta.</div>
         <label for="ePhoto">Foto de la factura (opcional)</label>
         <input id="ePhoto" type="file" accept="image/*" capture="environment">
         <div id="photoPreview" class="photo-preview" hidden>
@@ -476,7 +477,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v7";
+  var DEBT = "finanzas_deuda_v8";
 
   // Datos editables de deuda (valores por defecto)
   var prestamos = [
@@ -588,8 +589,33 @@
     document.getElementById("hPrest").textContent = fmt(p.totD);
     document.getElementById("hTarj").textContent = fmt(t.totD);
     document.getElementById("hDeuda").textContent = fmt(total);
+    poblarMediosPago();
   }
 
+  // Llena el selector "Pagado con" con Efectivo + las tarjetas reales
+  function poblarMediosPago(){
+    var sel = document.getElementById("ePago");
+    if(!sel) return;
+    var prev = sel.value;
+    sel.innerHTML = '<option value="Efectivo">Efectivo</option>';
+    tarjetas.forEach(function(t, i){
+      var o = document.createElement("option");
+      o.value = "tarjeta:" + i;
+      o.textContent = t.nombre;
+      sel.appendChild(o);
+    });
+    // restaurar selección si sigue existiendo
+    if(prev){ var found=false; for(var j=0;j<sel.options.length;j++){ if(sel.options[j].value===prev){ found=true; break; } } if(found) sel.value=prev; }
+    togglePagoNota();
+  }
+  function togglePagoNota(){
+    var sel = document.getElementById("ePago");
+    var nota = document.getElementById("pagoNota");
+    if(sel && nota) nota.hidden = (sel.value.indexOf("tarjeta:") !== 0);
+  }
+
+
+  document.getElementById("ePago").addEventListener("change", togglePagoNota);
 
   document.getElementById("addPrest").addEventListener("click", function(){
     prestamos.push({ nombre:"Nuevo préstamo", tasa:"—", deuda:0, cuota:0 }); saveDebt(); renderDebt();
@@ -700,8 +726,9 @@
     document.getElementById("calPaid").textContent = fmt(pagado);
     document.getElementById("calPend").textContent = fmt(total - pagado);
     document.getElementById("hPagado").textContent = fmt(pagado);
-    document.getElementById("hPagar").textContent = fmt(total);
     document.getElementById("heroPend").textContent = fmt(total - pagado);
+    var heroSub = document.getElementById("heroSub");
+    if(heroSub) heroSub.textContent = "de " + fmt(total) + " del mes";
     var pct = total > 0 ? Math.round(pagado/total*100) : 0;
     var circ = 2 * Math.PI * 72;
     document.getElementById("gaugeArc").setAttribute("stroke-dashoffset", (circ*(1-pct/100)).toFixed(1));
@@ -787,7 +814,8 @@
       }
       var item=document.createElement("div"); item.className="exp-item"; item.setAttribute("data-id", e.id);
       var thumb = e.photo ? '<img class="ethumb" src="'+e.photo+'" alt="Factura">' : '<span class="ethumb-none"></span>';
-      item.innerHTML='<span class="dot" style="background:'+catColors[e.cat]+'"></span>'+thumb+'<span class="edesc">'+escapeHtml(e.desc)+'</span><span class="eamt">'+fmt(e.amt)+'</span><button class="edel" aria-label="Eliminar">✕</button>';
+      var medio = nombreMedio(e.pago);
+      item.innerHTML='<span class="dot" style="background:'+catColors[e.cat]+'"></span>'+thumb+'<span class="edesc">'+escapeHtml(e.desc)+'</span><span class="epago">'+escapeHtml(medio)+'</span><span class="eamt">'+fmt(e.amt)+'</span><button class="edel" aria-label="Eliminar">✕</button>';
       area.appendChild(item);
     });
     // click en item = editar; click en thumb = ampliar; click en ✕ = borrar
@@ -809,7 +837,19 @@
     try { return d.toLocaleDateString("es-DO", { weekday:"long", day:"numeric", month:"long" }); } catch(e){ return iso; }
   }
   function findExp(id){ return expenses.filter(function(x){return String(x.id)===String(id);})[0]; }
-  function deleteExpense(id){ expenses = expenses.filter(function(x){return String(x.id)!==String(id);}); try{save();}catch(e){} if(String(editingId)===String(id)) cancelEditing(); renderGastos(); }
+  function nombreMedio(pago){
+    if(!pago || pago==="Efectivo") return "Efectivo";
+    if(pago.indexOf("tarjeta:")===0){ var i=parseInt(pago.split(":")[1],10); return tarjetas[i] ? tarjetas[i].nombre : "Tarjeta"; }
+    return pago;
+  }
+  function deleteExpense(id){
+    var e = findExp(id);
+    if(e && e.pago){ aplicarDeuda(e.pago, -e.amt); saveDebt(); renderDebt(); }
+    expenses = expenses.filter(function(x){return String(x.id)!==String(id);});
+    try{save();}catch(e2){}
+    if(String(editingId)===String(id)) cancelEditing();
+    renderGastos();
+  }
 
   // ---- Editar ----
   function startEditing(id){
@@ -819,6 +859,8 @@
     document.getElementById("eAmt").value = e.amt;
     document.getElementById("eDate").value = e.date || todayISO();
     document.getElementById("eCat").value = e.cat;
+    document.getElementById("ePago").value = e.pago || "Efectivo";
+    togglePagoNota();
     pendingPhoto = e.photo || null;
     if(e.photo){ document.getElementById("photoThumb").src = e.photo; document.getElementById("photoPreview").hidden = false; }
     else { document.getElementById("photoPreview").hidden = true; }
@@ -835,6 +877,7 @@
     document.getElementById("editNote").hidden = true;
     document.getElementById("submitBtn").textContent = "Agregar gasto";
     document.getElementById("eDate").value = todayISO();
+    poblarMediosPago();
   }
   document.getElementById("cancelEdit").addEventListener("click", cancelEditing);
 
@@ -858,22 +901,39 @@
     var amt=parseFloat(document.getElementById("eAmt").value);
     var cat=document.getElementById("eCat").value;
     var date=document.getElementById("eDate").value || todayISO();
+    var pago=document.getElementById("ePago").value || "Efectivo";
     if(!desc||!(amt>0)) return;
     var mk = monthKey(parseInt(date.slice(0,4),10), parseInt(date.slice(5,7),10)-1);
     if(editingId){
       var e = findExp(editingId);
-      if(e){ e.desc=desc; e.amt=amt; e.cat=cat; e.date=date; e.month=mk; e.photo=pendingPhoto||null; }
+      if(e){
+        // revertir el efecto anterior en deuda, aplicar el nuevo
+        aplicarDeuda(e.pago, -e.amt);
+        e.desc=desc; e.amt=amt; e.cat=cat; e.date=date; e.month=mk; e.photo=pendingPhoto||null; e.pago=pago;
+        aplicarDeuda(pago, amt);
+      }
       cancelEditing();
     } else {
-      expenses.push({ id:Date.now()+"-"+Math.random().toString(36).slice(2,6), desc:desc, amt:amt, cat:cat, date:date, month:mk, photo:pendingPhoto||null });
+      expenses.push({ id:Date.now()+"-"+Math.random().toString(36).slice(2,6), desc:desc, amt:amt, cat:cat, date:date, month:mk, photo:pendingPhoto||null, pago:pago });
+      aplicarDeuda(pago, amt);
       document.getElementById("addForm").reset();
       document.getElementById("photoPreview").hidden=true; pendingPhoto=null;
       document.getElementById("eDate").value = todayISO();
+      poblarMediosPago();
     }
     try{ save(); }catch(err){ document.getElementById("homeNote").textContent="Almacenamiento lleno. Elimina gastos viejos con foto."; }
+    saveDebt(); renderDebt();
     document.getElementById("eDesc").focus();
     renderGastos();
   });
+
+  // Suma (o resta, si delta negativo) un gasto a la deuda de la tarjeta usada.
+  // pago = "Efectivo" (no afecta) o "tarjeta:<indice>"
+  function aplicarDeuda(pago, delta){
+    if(!pago || pago.indexOf("tarjeta:")!==0) return;
+    var i = parseInt(pago.split(":")[1],10);
+    if(tarjetas[i]){ tarjetas[i].deuda = Math.max(0, tarjetas[i].deuda + delta); }
+  }
 
   // ---- Lightbox ----
   function openLightbox(src){ document.getElementById("lbImg").src=src; document.getElementById("lightbox").hidden=false; }

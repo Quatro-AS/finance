@@ -187,6 +187,10 @@
   .addrow-btn:hover { background: var(--line); }
   .editable-inline { border-bottom: 1px dashed var(--muted); cursor: pointer; }
   .pago-nota { font-size: .76rem; color: var(--c-tarj); margin-top: -4px; font-weight: 600; }
+  .ocr-status { font-size: .8rem; font-weight: 600; padding: 8px 12px; border-radius: 9px; display: flex; align-items: center; gap: 8px; }
+  .ocr-status.reading { background: var(--soft-pagado); color: var(--accent); }
+  .ocr-status.done { background: var(--soft-gasto); color: var(--c-gasto); }
+  .ocr-status.fail { background: var(--surface-2); color: var(--muted); }
   .pend-foot { text-align: center; font-size: .86rem; color: var(--muted); margin-top: 20px; }
   .pend-foot b { color: var(--c-pagar); font-weight: 800; }
   .pend-foot span { display: block; font-size: .76rem; margin-top: 2px; }
@@ -341,6 +345,7 @@
           <img id="photoThumb" alt="Vista previa">
           <button type="button" id="photoClear" class="photo-clear">Quitar foto</button>
         </div>
+        <div id="ocrStatus" class="ocr-status" hidden></div>
         <button type="submit" class="primary" id="submitBtn">Agregar gasto</button>
       </form>
       <div class="cat-list" id="catList"></div>
@@ -487,7 +492,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v11";
+  var DEBT = "finanzas_deuda_v12";
   var HIST = "finanzas_historial_v1";
   var histDeuda = {}; // { "2026-11": 4221766, ... } deuda total registrada por mes
 
@@ -968,8 +973,75 @@
     reader.onerror=function(){cb(null);}; reader.readAsDataURL(file);
   }
   var photoInput=document.getElementById("ePhoto"), photoThumb=document.getElementById("photoThumb"), photoPreview=document.getElementById("photoPreview");
-  photoInput.addEventListener("change", function(){ var f=photoInput.files&&photoInput.files[0]; if(!f)return; compressImage(f,function(d){ if(!d)return; pendingPhoto=d; photoThumb.src=d; photoPreview.hidden=false; }); });
-  document.getElementById("photoClear").addEventListener("click", function(){ pendingPhoto=null; photoInput.value=""; photoThumb.src=""; photoPreview.hidden=true; });
+  photoInput.addEventListener("change", function(){ var f=photoInput.files&&photoInput.files[0]; if(!f)return; compressImage(f,function(d){ if(!d)return; pendingPhoto=d; photoThumb.src=d; photoPreview.hidden=false; escanearRecibo(d); }); });
+
+  // ---- OCR: leer monto del recibo (opcional, el usuario siempre puede corregir) ----
+  var tesseractCargado = false;
+  function cargarTesseract(cb){
+    if(window.Tesseract){ cb(true); return; }
+    if(tesseractCargado){ cb(false); return; }
+    tesseractCargado = true;
+    var s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.0/tesseract.min.js";
+    s.onload = function(){ cb(!!window.Tesseract); };
+    s.onerror = function(){ cb(false); };
+    document.head.appendChild(s);
+  }
+  function setOcr(cls, txt){
+    var el = document.getElementById("ocrStatus");
+    el.className = "ocr-status " + cls; el.textContent = txt; el.hidden = false;
+    if(!txt) el.hidden = true;
+  }
+  // extrae el monto más probable de un texto de recibo
+  function extraerMonto(texto){
+    var t = texto.replace(/[Oo]/g, "0"); // confusión común O/0
+    // buscar líneas con "total"
+    var lineas = t.split(/\n/);
+    var candidatos = [];
+    lineas.forEach(function(l){
+      var low = l.toLowerCase();
+      // montos tipo 1,234.56 o 1234.56 o 1,234
+      var nums = l.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?/g) || [];
+      nums.forEach(function(n){
+        var val = parseFloat(n.replace(/,/g,""));
+        if(!isNaN(val) && val >= 10){
+          var peso = 1;
+          if(/total/.test(low) && !/sub/.test(low)) peso = 100; // "total" sin "subtotal"
+          else if(/total/.test(low)) peso = 50;
+          else if(/pagar|rd\$|monto/.test(low)) peso = 30;
+          candidatos.push({ val: val, peso: peso });
+        }
+      });
+    });
+    if(candidatos.length===0) return null;
+    // preferir el de mayor peso; a igual peso, el mayor valor (suele ser el total)
+    candidatos.sort(function(a,b){ return (b.peso - a.peso) || (b.val - a.val); });
+    return candidatos[0].val;
+  }
+  function escanearRecibo(dataUrl){
+    // solo si el monto está vacío (no pisar lo que el usuario ya escribió)
+    var amtEl = document.getElementById("eAmt");
+    if(amtEl.value && parseFloat(amtEl.value) > 0) return;
+    setOcr("reading", "Leyendo recibo…");
+    cargarTesseract(function(ok){
+      if(!ok){ setOcr("fail", "No se pudo leer automático. Escribe el monto."); setTimeout(function(){setOcr("",""); }, 3000); return; }
+      window.Tesseract.recognize(dataUrl, "spa+eng").then(function(res){
+        var monto = extraerMonto(res.data.text || "");
+        if(monto && !(amtEl.value && parseFloat(amtEl.value)>0)){
+          amtEl.value = Math.round(monto);
+          setOcr("done", "Monto detectado: " + fmt(monto) + " · revísalo");
+          setTimeout(function(){ setOcr("",""); }, 4000);
+        } else {
+          setOcr("fail", "No detecté el monto. Escríbelo a mano.");
+          setTimeout(function(){ setOcr("",""); }, 3000);
+        }
+      }).catch(function(){
+        setOcr("fail", "No se pudo leer. Escribe el monto.");
+        setTimeout(function(){ setOcr("",""); }, 3000);
+      });
+    });
+  }
+  document.getElementById("photoClear").addEventListener("click", function(){ pendingPhoto=null; photoInput.value=""; photoThumb.src=""; photoPreview.hidden=true; setOcr("",""); });
 
   // ---- Submit (agregar o editar) ----
   document.getElementById("addForm").addEventListener("submit", function(ev){

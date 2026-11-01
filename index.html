@@ -250,7 +250,7 @@
       </button>
       <button class="cell" data-go="calendario">
         <div class="ic ic-pagar">📅</div>
-        <div class="tx"><div class="nm">A pagar</div><div class="vl">RD$176,931</div></div>
+        <div class="tx"><div class="nm">A pagar</div><div class="vl" id="hPagar">RD$148,717</div></div>
         <span class="ar">›</span>
       </button>
       <button class="cell" data-go="calendario">
@@ -372,7 +372,6 @@
         <div class="cal-week">Sin fecha fija</div>
         <div class="cal-row t-prest" data-id="c11"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Scotia cuotas</span><span class="tag">Préstamo · 20%</span></span><span class="amt">3,856</span><span class="check">✓</span></div>
         <div class="cal-row t-prest" data-id="c12"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Reservas Pres</span><span class="tag">Préstamo</span></span><span class="amt">11,774</span><span class="check">✓</span></div>
-        <div class="cal-row t-casa" data-id="c13"><span class="date"><span class="d">—</span><span class="m">nov</span></span><span class="what"><span class="nm">Casa</span><span class="tag">Vivienda</span></span><span class="amt">27,500</span><span class="check">✓</span></div>
       </div>
       <div class="cal-foot">
         <span>Pagado: <b id="calPaid" style="color:var(--c-gasto)">RD$0</b></span>
@@ -419,14 +418,14 @@
   <!-- DEUDA -->
   <div class="view" id="v-deuda">
     <div class="sec-card">
-      <div class="sec-head"><h2>Resumen de deuda</h2><div class="meta">Casa (vivienda): <b id="casaVal" class="editable-inline">27,500</b> · toca para cambiar</div></div>
+      <div class="sec-head"><h2>Resumen de deuda</h2><div class="meta">noviembre 2026</div></div>
       <div class="debt-tiles">
         <div class="debt-tile total full"><div class="dl">Deuda total</div><div class="dv" id="dTotal">—</div></div>
         <div class="debt-tile prest"><div class="dl">Préstamos</div><div class="dv" id="dPrest">—</div></div>
         <div class="debt-tile tarj"><div class="dl">Tarjetas</div><div class="dv" id="dTarj">—</div></div>
         <div class="debt-tile"><div class="dl">Cuota préstamos</div><div class="dv" id="dCuotaP">—</div></div>
         <div class="debt-tile"><div class="dl">Pago tarjetas</div><div class="dv" id="dPagoT">—</div></div>
-        <div class="debt-tile full"><div class="dl">Necesidad del mes (con casa)</div><div class="dv" id="dNecesidad">—</div></div>
+        <div class="debt-tile full"><div class="dl">Pago del mes</div><div class="dv" id="dNecesidad">—</div></div>
       </div>
     </div>
   </div>
@@ -477,7 +476,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v6";
+  var DEBT = "finanzas_deuda_v7";
 
   // Datos editables de deuda (valores por defecto)
   var prestamos = [
@@ -499,11 +498,11 @@
     { nombre:"Scotia T", tasa:"60%", deuda:0, cuota:0 },
     { nombre:"Reservas T", tasa:"60%", deuda:323166, cuota:0 }
   ];
-  var casa = 27500;
+  var casa = 0;
 
-  var calAmts = { c1:12895,c2:0,c3:13719,c4:11616,c5:16294,c6:16694,c7:4738,c8:12841,c9:22800,c10:21490,c11:3856,c12:11774,c13:27500 };
-  var calDays = { c1:1,c2:2,c3:6,c4:9,c5:12,c6:12,c7:16,c8:20,c9:22,c10:22,c11:null,c12:null,c13:null };
-  var calNames = { c1:"Scotia Prest",c2:"Qik T",c3:"BHD crediclicl",c4:"BHD Prest 6931",c5:"BHD Prest 2587",c6:"BHD Prest 3861",c7:"BHD Credimas",c8:"BHD Prest 5281",c9:"BHD Prest 9785",c10:"BHD T (USD)",c11:"Scotia cuotas",c12:"Reservas Pres",c13:"Casa" };
+  var calAmts = { c1:12895,c2:0,c3:13719,c4:11616,c5:16294,c6:16694,c7:4738,c8:12841,c9:22800,c10:21490,c11:3856,c12:11774 };
+  var calDays = { c1:1,c2:2,c3:6,c4:9,c5:12,c6:12,c7:16,c8:20,c9:22,c10:22,c11:null,c12:null };
+  var calNames = { c1:"Scotia Prest",c2:"Qik T",c3:"BHD crediclicl",c4:"BHD Prest 6931",c5:"BHD Prest 2587",c6:"BHD Prest 3861",c7:"BHD Credimas",c8:"BHD Prest 5281",c9:"BHD Prest 9785",c10:"BHD T (USD)",c11:"Scotia cuotas",c12:"Reservas Pres" };
   var REF_MONTH = 10, REF_YEAR = 2026;
   var titles = { home:"Mis Finanzas", gastos:"Gastos", calendario:"Pagos", prestamos:"Préstamos", tarjetas:"Tarjetas", deuda:"Deuda" };
 
@@ -583,25 +582,14 @@
     document.getElementById("dTarj").textContent = fmt(t.totD);
     document.getElementById("dCuotaP").textContent = fmtNum(p.totC);
     document.getElementById("dPagoT").textContent = fmtNum(t.totC);
-    var necesidad = p.totC + t.totC + casa;
+    var necesidad = p.totC + t.totC;
     document.getElementById("dNecesidad").textContent = fmt(necesidad);
-    document.getElementById("casaVal").textContent = fmtNum(casa);
     // inicio
     document.getElementById("hPrest").textContent = fmt(p.totD);
     document.getElementById("hTarj").textContent = fmt(t.totD);
     document.getElementById("hDeuda").textContent = fmt(total);
   }
 
-  // editar casa
-  document.getElementById("casaVal").addEventListener("click", function(){
-    var el = this;
-    if(el.querySelector("input")) return;
-    var inp = document.createElement("input"); inp.className="cellinput"; inp.type="number"; inp.value=casa; inp.style.width="110px"; inp.style.textAlign="left";
-    el.textContent=""; el.appendChild(inp); inp.focus(); inp.select();
-    function commit(){ casa = parseNum(inp.value); saveDebt(); renderDebt(); }
-    inp.addEventListener("blur", commit);
-    inp.addEventListener("keydown", function(ev){ if(ev.key==="Enter") inp.blur(); if(ev.key==="Escape") renderDebt(); });
-  });
 
   document.getElementById("addPrest").addEventListener("click", function(){
     prestamos.push({ nombre:"Nuevo préstamo", tasa:"—", deuda:0, cuota:0 }); saveDebt(); renderDebt();
@@ -712,6 +700,7 @@
     document.getElementById("calPaid").textContent = fmt(pagado);
     document.getElementById("calPend").textContent = fmt(total - pagado);
     document.getElementById("hPagado").textContent = fmt(pagado);
+    document.getElementById("hPagar").textContent = fmt(total);
     document.getElementById("heroPend").textContent = fmt(total - pagado);
     var pct = total > 0 ? Math.round(pagado/total*100) : 0;
     var circ = 2 * Math.PI * 72;

@@ -187,6 +187,9 @@
   .addrow-btn:hover { background: var(--line); }
   .editable-inline { border-bottom: 1px dashed var(--muted); cursor: pointer; }
   .pago-nota { font-size: .76rem; color: var(--c-tarj); margin-top: -4px; font-weight: 600; }
+  .pend-foot { text-align: center; font-size: .86rem; color: var(--muted); margin-top: 20px; }
+  .pend-foot b { color: var(--c-pagar); font-weight: 800; }
+  .pend-foot span { display: block; font-size: .76rem; margin-top: 2px; }
   .exp-item .epago { font-size: .68rem; color: var(--muted); flex: none; }
   .table-actions { display: flex; gap: 8px; padding: 12px 18px; flex-wrap: wrap; }
   .table-actions button { flex: 1; min-width: 130px; padding: 11px; border-radius: 11px; font-weight: 600; font-size: .86rem; cursor: pointer; font-family: var(--font-body); }
@@ -272,24 +275,7 @@
       </button>
     </div>
 
-    <div class="hero">
-      <div class="lbl">Pendiente de pagos del mes</div>
-      <div class="big" id="heroPend">RD$148,717</div>
-      <div class="lbl" id="heroSub" style="margin-top:4px">de RD$148,717 del mes</div>
-    </div>
-
-    <div class="gauge-wrap">
-      <div class="gauge-lbl">Pagos del mes saldados</div>
-      <div class="gauge">
-        <svg width="170" height="170" viewBox="0 0 170 170">
-          <circle cx="85" cy="85" r="72" fill="none" stroke="var(--surface-2)" stroke-width="17"/>
-          <circle id="gaugeArc" cx="85" cy="85" r="72" fill="none" stroke="var(--c-gasto)" stroke-width="17" stroke-linecap="round" stroke-dasharray="452.4" stroke-dashoffset="452.4"/>
-        </svg>
-        <div class="pct" id="gaugePct">0%</div>
-      </div>
-    </div>
-
-    <div class="mini-sum">
+    <div class="mini-sum" style="margin-top:18px">
       <div class="ms"><div class="l">Gastado hoy</div><div class="v" id="sumHoy">RD$0</div></div>
       <div class="ms"><div class="l">Esta semana</div><div class="v" id="sumSem">RD$0</div></div>
     </div>
@@ -297,6 +283,11 @@
     <div class="backup-reminder" id="backupReminder" hidden>
       <span id="brText"></span>
       <button type="button" id="brBtn">Respaldar</button>
+    </div>
+
+    <div class="pend-foot">
+      Pendiente de pagos del mes: <b id="heroPend">RD$148,717</b>
+      <span id="heroSub"></span>
     </div>
   </div>
 
@@ -477,7 +468,7 @@
   var expenses = [], paid = {}, pendingPhoto = null, editingId = null;
   var curY = 2026, curM = 10; // noviembre (0-base) = mes activo mostrado
   var lastBackupCount = 0;
-  var DEBT = "finanzas_deuda_v8";
+  var DEBT = "finanzas_deuda_v9";
 
   // Datos editables de deuda (valores por defecto)
   var prestamos = [
@@ -728,11 +719,7 @@
     document.getElementById("hPagado").textContent = fmt(pagado);
     document.getElementById("heroPend").textContent = fmt(total - pagado);
     var heroSub = document.getElementById("heroSub");
-    if(heroSub) heroSub.textContent = "de " + fmt(total) + " del mes";
-    var pct = total > 0 ? Math.round(pagado/total*100) : 0;
-    var circ = 2 * Math.PI * 72;
-    document.getElementById("gaugeArc").setAttribute("stroke-dashoffset", (circ*(1-pct/100)).toFixed(1));
-    document.getElementById("gaugePct").textContent = pct + "%";
+    if(heroSub) heroSub.textContent = (pagado>0 ? ("pagado " + fmt(pagado) + " de " + fmt(total)) : ("de " + fmt(total) + " del mes"));
   }
   Array.prototype.forEach.call(document.querySelectorAll(".cal-row"), function(row){
     row.addEventListener("click", function(){ var id=row.getAttribute("data-id"); paid[id]=!paid[id]; savePaid(); renderCal(); renderAlerts(); });
